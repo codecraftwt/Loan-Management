@@ -42,7 +42,7 @@ const updateProfile = async (req, res) => {
 };
 
 const uploadProfileImage = async (req, res) => {
-  const userId = req.user.id; // Get user ID from the decoded token
+  const userId = req.user.id; 
 
   if (!req.file) {
     return res.status(400).json({ message: "No file uploaded." });
@@ -63,12 +63,10 @@ const uploadProfileImage = async (req, res) => {
             error: error.message,
           });
         }
-        // Log Cloudinary result
         console.log("Cloudinary upload result:", result);
         const imageUrl = result.secure_url;
         console.log("Image URL:", imageUrl);
 
-        // Find the user and update the profile image URL
         const user = await User.findById(userId);
         if (!user) {
           console.log("User not found");
@@ -95,7 +93,6 @@ const uploadProfileImage = async (req, res) => {
       }
     );
 
-    // Pipe the file buffer from multer to Cloudinary upload stream
     stream.end(req.file.buffer);
   } catch (error) {
     console.error("Error uploading profile image:", error);
@@ -117,18 +114,15 @@ const deleteProfileImage = async (req, res) => {
 
     const publicId = `Loan_user_profiles/${userId}_profile_image`;
 
-    // Delete from Cloudinary
     const cloudinaryResult = await cloudinary.uploader.destroy(publicId);
     console.log("Cloudinary result:", cloudinaryResult);
 
-    // Check if the deletion was successful
     if (cloudinaryResult.result !== "ok") {
       return res
         .status(500)
         .json({ message: "Error deleting image from Cloudinary." });
     }
 
-    // Update the user record to remove the profile image
     user.profileImage = null;
     await user.save();
 

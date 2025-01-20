@@ -20,7 +20,7 @@ import {
   updateLoan,
 } from '../../Redux/Slices/loanSlice';
 import Toast from 'react-native-toast-message';
-import colors from '../../Constants/colors';
+import colors from '../../constants/colors';
 import {m} from 'walstar-rn-responsive';
 
 export default function AddDetails({route, navigation}) {

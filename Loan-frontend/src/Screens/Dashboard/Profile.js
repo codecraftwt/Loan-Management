@@ -103,12 +103,12 @@ export default function Profile() {
 
           <View style={styles.profileContent}>
             <View style={styles.optionsContainer}>
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 style={styles.option}
                 onPress={navigateToSettings}>
                 <Icon name="settings" size={20} color="#333333" />
                 <Text style={styles.optionText}>Settings</Text>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
 
               <TouchableOpacity
                 style={styles.option}

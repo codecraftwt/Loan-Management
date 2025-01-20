@@ -3,7 +3,7 @@ import React from 'react';
 import {View, Text, Image, StyleSheet, StatusBar} from 'react-native';
 import {m} from 'walstar-rn-responsive';
 import {logo} from '../Assets';
-import colors from '../Constants/colors';
+import colors from '../constants/colors';
 
 const Header = ({title}) => {
   return (

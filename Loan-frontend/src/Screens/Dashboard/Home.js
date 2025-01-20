@@ -10,7 +10,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
-import Icon from 'react-native-vector-icons/Feather'; // Importing Feather icons for buttons
+import Icon from 'react-native-vector-icons/Feather';
 import {logo} from '../../Assets';
 import {getLoanStats} from '../../Redux/Slices/loanSlice';
 import {useDispatch, useSelector} from 'react-redux';
@@ -25,7 +25,7 @@ export default function Home() {
   const user = useSelector(state => state.auth.user);
   const loanCount = useSelector(state => state.loans.loanStats);
 
-  const [refreshing, setRefreshing] = useState(false); // State for pull-to-refresh
+  const [refreshing, setRefreshing] = useState(false);
 
   useFetchUserFromStorage();
 
@@ -37,39 +37,41 @@ export default function Home() {
     }, [dispatch, user, loanCount]),
   );
 
-  // Static data for loan stats
   const loanStats = [
     {
       title: 'Loans Given',
       value: loanCount?.loansGivenCount || 0,
       icon: 'arrow-up-circle',
-      backgroundColor: '#b80266',
+      backgroundColor: '#8e44ad',
+      gradient: ['#8e44ad', '#9b59b6'],
     },
     {
       title: 'Loans Taken',
       value: loanCount?.loansTakenCount || 0,
       icon: 'arrow-down-circle',
-      backgroundColor: '#4CAF50',
+      backgroundColor: '#e67e22',
+      gradient: ['#e67e22', '#f39c12'],
     },
     {
       title: 'Loans Paid',
       value: loanCount?.loansPaidCount || 0,
       icon: 'check-circle',
-      backgroundColor: '#2196F3',
+      backgroundColor: '#2ecc71',
+      gradient: ['#2ecc71', '#27ae60'],
     },
     {
       title: 'Active Loans',
       value: loanCount?.loansPendingCount || 0,
       icon: 'clock',
-      backgroundColor: 'gray',
+      backgroundColor: '#2980b9',
+      gradient: ['#2980b9', '#3498db'],
     },
   ];
 
-  // Pull-to-refresh function
   const onRefresh = async () => {
-    setRefreshing(true); // Set refreshing to true
-    await dispatch(getLoanStats(aadhaarNumber)); // Fetch the loan stats again
-    setRefreshing(false); // Set refreshing to false after fetching
+    setRefreshing(true);
+    await dispatch(getLoanStats(aadhaarNumber));
+    setRefreshing(false);
   };
 
   return (
@@ -80,14 +82,14 @@ export default function Home() {
         contentContainerStyle={styles.cardsContainer}
         refreshControl={
           <RefreshControl
-            refreshing={refreshing} // Pass the refreshing state
-            onRefresh={onRefresh} // Call onRefresh function when pull-to-refresh happens
+            refreshing={refreshing}
+            onRefresh={onRefresh}
           />
         }>
-        {/* Main Stats Section */}
+
         <View style={styles.statsSection}>
-          <Text style={styles.welcomeText}>Welcome to the Loan App</Text>
-          <Text style={styles.subtitle}>Track your loan activities</Text>
+          <Text style={styles.welcomeText}>Welcome, {user?.name || 'User'}</Text>
+          <Text style={styles.subtitle}>Track your loan activities at a glance</Text>
 
           <View style={styles.statsWrapper}>
             {loanStats.map((stat, index) => (
@@ -95,7 +97,10 @@ export default function Home() {
                 key={index}
                 style={[
                   styles.statCard,
-                  {backgroundColor: stat.backgroundColor},
+                  {
+                    backgroundColor: stat.backgroundColor,
+                    shadowColor: stat.backgroundColor,
+                  },
                 ]}>
                 <Icon name={stat.icon} size={36} color="#fff" />
                 <Text style={styles.statValue}>{stat.value}</Text>
@@ -105,17 +110,15 @@ export default function Home() {
           </View>
         </View>
 
-        {/* Subscribe Section */}
         <View style={styles.content}>
           <Text style={styles.additionalInfo}>
-            For our premium features, please subscribe to our service
+            Unlock premium features to manage your loans effectively.
           </Text>
 
-          {/* Subscribe Button */}
           <TouchableOpacity
             style={styles.subscribeButton}
             onPress={() => navigation.navigate('SubscriptionScreen')}>
-            <Text style={styles.subscribeButtonText}>Subscribe Here</Text>
+            <Text style={styles.subscribeButtonText}>Upgrade to Premium</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -141,11 +144,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontFamily: 'Montserrat-Bold',
     marginBottom: m(10),
-    color: '#000',
+    color: '#333',
   },
   subtitle: {
     fontSize: m(16),
-    color: '#777',
+    color: '#555',
     textAlign: 'center',
     marginBottom: m(15),
   },
@@ -164,23 +167,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: m(20),
     padding: m(15),
-    elevation: m(5),
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: m(2)},
-    shadowOpacity: 0.1,
+    elevation: m(10),
+    shadowOffset: {width: 0, height: m(4)},
+    shadowOpacity: 0.2,
     shadowRadius: m(5),
     marginBottom: m(20),
   },
   statValue: {
     fontSize: m(24),
-    fontWeight: 'bold',
+    fontFamily: 'Poppins-Bold',
     color: '#fff',
     marginTop: m(10),
   },
   statTitle: {
     fontSize: m(14),
     color: '#fff',
-    fontWeight: 'bold',
+    fontFamily: 'Poppins-Regular',
     marginTop: m(5),
   },
   content: {
@@ -191,20 +193,19 @@ const styles = StyleSheet.create({
     fontSize: m(16),
     color: '#777',
     textAlign: 'center',
-    marginBlock: m(20),
+    marginVertical: m(20),
   },
   subscribeButton: {
-    backgroundColor: '#b80266',
+    backgroundColor: '#e74c3c',
     borderRadius: m(8),
     paddingVertical: m(14),
     alignItems: 'center',
     width: '80%',
-    marginTop: m(20),
-    marginBottom: m(20),
+    elevation: m(5),
   },
   subscribeButtonText: {
     color: '#fff',
     fontSize: m(16),
-    fontWeight: 'bold',
+    fontFamily: 'Montserrat-SemiBold',
   },
 });

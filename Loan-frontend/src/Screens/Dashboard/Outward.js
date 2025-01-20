@@ -94,13 +94,12 @@ const Outward = ({navigation}) => {
           onChangeText={setSearchQuery}
           placeholderTextColor="#888"
         />
+        <TouchableOpacity
+          style={styles.plusButton}
+          onPress={() => navigation.navigate('AddDetails')}>
+          <Text style={styles.plusButtonText}>+</Text>
+        </TouchableOpacity>
       </View>
-
-      <TouchableOpacity
-        style={styles.plusButton}
-        onPress={() => navigation.navigate('AddDetails')}>
-        <Text style={styles.plusButtonText}>+</Text>
-      </TouchableOpacity>
 
       {loading ? (
         <LoaderSkeleton />
@@ -137,7 +136,6 @@ const Outward = ({navigation}) => {
                         style={styles.userIcon}
                       />
                     )}
-
                     <View style={styles.textContainer}>
                       <Text style={styles.dataLabel}>
                         Full Name:{' '}
@@ -158,7 +156,6 @@ const Outward = ({navigation}) => {
                         </Text>
                       </Text>
                     </View>
-
                     <TouchableOpacity
                       style={styles.statusUpdateButton}
                       onPress={() => handleStatusUpdate(loan)}>
@@ -205,9 +202,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   plusButton: {
-    position: 'absolute',
-    top: m(95),
-    right: m(25),
     backgroundColor: '#fff',
     borderRadius: m(20),
     width: m(38),
@@ -219,6 +213,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: m(2),
     elevation: m(4),
+    marginLeft: m(10),
+    top: m(3),
   },
   plusButtonText: {
     fontSize: m(28),
@@ -273,11 +269,14 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   searchBarContainer: {
+    flex: 1,
+    flexDirection: 'row',
     paddingHorizontal: m(15),
     marginTop: m(20),
     marginBottom: m(10),
   },
   searchInput: {
+    flex: 1,
     backgroundColor: '#fff',
     borderRadius: m(20),
     paddingHorizontal: m(15),
