@@ -1,0 +1,44 @@
+# Node.js Backend
+node_modules/
+npm-debug.log
+yarn-error.log
+.env
+.DS_Store
+
+# React Native Frontend
+# Build
+android/build/
+ios/Pods/
+ios/.symlinks/
+ios/Podfile.lock
+ios/Build/
+ios/DerivedData/
+
+
+# React Native Metro Bundler
+# Cache
+metro-bundler-cache-*
+# Android specific
+*.iml
+.gradle/
+
+# OSX-specific
+.DS_Store
+
+# Visual Studio Code
+.vscode/
+
+# JetBrains IDEs
+.idea/
+
+# Miscellaneous
+*.log
+*.swp
+*.swo
+
+
+# Yarn (if using Yarn)
+.yarn/
+
+# MacOS system files
+Thumbs.db
