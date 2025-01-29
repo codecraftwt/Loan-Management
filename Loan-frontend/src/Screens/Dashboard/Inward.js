@@ -124,7 +124,7 @@ export default function Inward({navigation}) {
           {/* Display total amount */}
           <View style={styles.totalAmountContainer}>
             <Text style={styles.totalAmountText}>
-              Total Loan Amount: {totalAmount} Rs
+              Total Pending Loan Amount: {totalAmount} Rs
             </Text>
           </View>
 
@@ -140,7 +140,7 @@ export default function Inward({navigation}) {
                 <TouchableOpacity
                   key={index}
                   onPress={() =>
-                    navigation.navigate('LoanDetailScreen', {
+                    navigation.navigate('PersonalLoan', {
                       loanDetails: data,
                       isEdit: false,
                     })

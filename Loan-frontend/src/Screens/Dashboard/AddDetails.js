@@ -26,7 +26,9 @@ import {m} from 'walstar-rn-responsive';
 export default function AddDetails({route, navigation}) {
   const dispatch = useDispatch();
 
-  const {loans, error, loading} = useSelector(state => state.loans);
+  const {loans, error, aadharError, loading} = useSelector(
+    state => state.loans,
+  );
 
   const {loanDetails} = route.params || {};
 
@@ -126,7 +128,9 @@ export default function AddDetails({route, navigation}) {
             position: 'top',
             text1: 'Loan saved successfully',
           });
-          navigation.goBack();
+          navigation.navigate('BottomNavigation', {
+            screen: 'Outward',
+          });
         } else {
           if (response.payload && response.payload.errors) {
             setErrorMessage(response.payload.errors.join(', '));
@@ -160,10 +164,13 @@ export default function AddDetails({route, navigation}) {
   const handleAadharChange = text => {
     const isValidAadhar = /^\d{0,12}$/.test(text);
     if (!isValidAadhar) return;
-    setAadharNo(text);
-    setShowOldHistoryButton(text.length === 12);
 
-    if (text?.length === 12) {
+    setAadharNo(text);
+
+    const isValidLength = text.length === 12;
+    setShowOldHistoryButton(isValidLength);
+
+    if (isValidLength) {
       dispatch(getLoanByAadhar(text));
     }
   };
@@ -187,6 +194,7 @@ export default function AddDetails({route, navigation}) {
     setEndDatePickerVisible(false);
   };
 
+  console.log('aadharError ---------->', aadharError);
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -239,12 +247,25 @@ export default function AddDetails({route, navigation}) {
           placeholderTextColor="#888"
         />
 
-        {showOldHistoryButton && (
-          <TouchableOpacity
-            style={styles.oldHistoryButton}
-            onPress={() => navigation.navigate('OldHistoryPage', {aadharNo})}>
-            <Text style={styles.oldHistoryButtonText}>Old History</Text>
-          </TouchableOpacity>
+        {showOldHistoryButton &&
+          (aadharError === null || aadharError === '' ? (
+            <TouchableOpacity
+              style={styles.oldHistoryButton}
+              onPress={() => navigation.navigate('OldHistoryPage', {aadharNo})}>
+              <Text style={styles.oldHistoryButtonText}>Old History</Text>
+            </TouchableOpacity>
+          ) : (
+            <Text style={styles.aadharText}>
+              {typeof aadharError === 'object' && aadharError?.message
+                ? aadharError.message
+                : aadharError || 'Aadhar number not found'}
+            </Text>
+          ))}
+
+        {(errorMessage || error) && (
+          <Text style={styles.errorText}>
+            {errorMessage || error?.message || 'An unknown error occurred.'}
+          </Text>
         )}
 
         <TextInput
@@ -465,6 +486,12 @@ const styles = StyleSheet.create({
   errorText: {
     color: 'red',
     fontSize: m(14),
+    marginBottom: m(10),
+  },
+  aadharText: {
+    color: '#000000',
+    fontSize: m(14),
+    fontFamily: 'Montserrat-Regular',
     marginBottom: m(10),
   },
   oldHistoryButton: {

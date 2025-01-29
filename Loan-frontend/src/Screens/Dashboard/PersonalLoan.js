@@ -9,44 +9,22 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import moment from 'moment';
-import {useDispatch} from 'react-redux';
-import {updateLoanStatus} from '../../Redux/Slices/loanSlice'; // Update as per your redux action
-import Toast from 'react-native-toast-message';
 import {m} from 'walstar-rn-responsive';
-import PromptBox from '../PromptBox/Prompt';
+import {useSelector} from 'react-redux';
 
-const LoanDetailRow = ({label, value, icon, isStatus, onStatusChange}) => (
+const LoanDetailRow = ({label, value, icon}) => (
   <View style={styles.row}>
     <Icon name={icon} size={28} color="#b80266" style={styles.icon} />
     <View style={styles.dataContainer}>
-      <View>
-        <Text style={styles.label}>{label}</Text>
-        <Text style={styles.value}>{value}</Text>
-      </View>
-      {value === 'pending' && (
-        <TouchableOpacity
-          style={styles.statusUpdateButton}
-          onPress={onStatusChange}>
-          {/* <Icon
-            name={value === 'pending' ? 'clock' : 'check-circle'}
-            size={18}
-            color="#fff"
-          /> */}
-          <Text style={styles.statusUpdateText}>
-            {value === 'pending' ? 'Mark as Paid' : 'Mark as Pending'}
-          </Text>
-        </TouchableOpacity>
-      )}
+      <Text style={styles.label}>{label}</Text>
+      <Text style={styles.value}>{value}</Text>
     </View>
   </View>
 );
 
-export default function LoanDetailScreen({route, navigation}) {
+export default function PersonalLoan({route, navigation}) {
   const {loanDetails, isEdit} = route.params;
-  const dispatch = useDispatch();
-
-  const [isPromptVisible, setPromptVisible] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState(null);
+  const user = useSelector(state => state.auth.user);
 
   const handleBack = () => navigation.goBack();
 
@@ -65,57 +43,13 @@ export default function LoanDetailScreen({route, navigation}) {
     return statusStyles[status] || styles.pendingStatus;
   };
 
-  const updateLoanStatusHandler = newStatus => {
-    dispatch(updateLoanStatus({loanId: loanDetails._id, status: newStatus}))
-      .unwrap()
-      .then(() => {
-        Toast.show({
-          type: 'success',
-          position: 'top',
-          text1: `Loan status updated to ${newStatus}`,
-        });
-        setPromptVisible(false);
-      })
-      .catch(err => {
-        Toast.show({
-          type: 'error',
-          position: 'top',
-          text1: err.message || 'Error updating loan status',
-        });
-        setPromptVisible(false);
-      });
-  };
-
-  const handleStatusChangeClick = () => {
-    const newStatus = loanDetails.status === 'pending' ? 'paid' : 'pending';
-    setSelectedStatus(newStatus);
-    setPromptVisible(true);
-  };
-
-  const handleConfirm = () => {
-    if (selectedStatus) {
-      updateLoanStatusHandler(selectedStatus);
-      handleBack();
-    }
-  };
-
-  const handleCancel = () => {
-    setPromptVisible(false);
-  };
-
   const loanInfo = [
     {
       label: 'Loan Amount',
       value: `${loanDetails.amount} Rs`,
       icon: 'dollar-sign',
     },
-    {
-      label: 'Loan Status',
-      value: loanDetails.status,
-      icon: 'check-circle',
-      isStatus: true,
-      onStatusChange: handleStatusChangeClick,
-    },
+    {label: 'Loan Status', value: loanDetails.status, icon: 'check-circle'},
     {label: 'Purpose', value: loanDetails.purpose, icon: 'book'},
     {
       label: 'Loan Start Date',
@@ -154,9 +88,9 @@ export default function LoanDetailScreen({route, navigation}) {
           <Text style={styles.loanTitle}>Loan Overview</Text>
 
           <View style={styles.profileInfo}>
-            {loanDetails.profileImage ? (
+            {user?.profileImage ? (
               <Image
-                source={{uri: loanDetails.profileImage}}
+                source={{uri: user.profileImage}}
                 style={styles.profileImage}
               />
             ) : (
@@ -191,16 +125,6 @@ export default function LoanDetailScreen({route, navigation}) {
           ))}
         </View>
       </ScrollView>
-
-      {/* PromptBox for Status Change */}
-      <PromptBox
-        visible={isPromptVisible}
-        message={`Are you sure you want to change the status to ${
-          selectedStatus === 'pending' ? 'pending' : 'paid'
-        }?`}
-        onConfirm={handleConfirm}
-        onCancel={handleCancel}
-      />
     </View>
   );
 }
@@ -328,8 +252,6 @@ const styles = StyleSheet.create({
   },
   dataContainer: {
     flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
   },
   label: {
     fontSize: m(15),
@@ -347,17 +269,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statusUpdateButton: {
-    flexDirection: 'row',
-    gap: m(4),
-    backgroundColor: 'green',
-    paddingHorizontal: m(8),
+    backgroundColor: '#b80266',
+    paddingVertical: m(12),
+    paddingHorizontal: m(20),
     borderRadius: m(8),
     alignItems: 'center',
     justifyContent: 'center',
   },
   statusUpdateText: {
     color: '#FFF',
-    fontSize: m(12),
+    fontSize: m(16),
     fontFamily: 'Poppins-SemiBold',
   },
 });

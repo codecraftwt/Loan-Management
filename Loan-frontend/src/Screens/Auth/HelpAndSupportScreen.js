@@ -5,7 +5,6 @@ import {
   View,
   ScrollView,
   TextInput,
-  Button,
   TouchableOpacity,
   Linking,
 } from 'react-native';
@@ -13,6 +12,7 @@ import Icon from 'react-native-vector-icons/Feather';
 import Toast from 'react-native-toast-message';
 import {useNavigation} from '@react-navigation/native';
 import {m} from 'walstar-rn-responsive';
+import helpData from '../../data/helpData';
 
 export default function HelpAndSupportScreen() {
   const navigation = useNavigation();
@@ -50,35 +50,22 @@ export default function HelpAndSupportScreen() {
       </View>
 
       {/* Help & Support Content */}
-      <ScrollView style={styles.container}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}>
         <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
 
-        <View style={styles.faqItem}>
-          <Text style={styles.faqQuestion}>Q: How do I reset my password?</Text>
-          <Text style={styles.faqAnswer}>
-            A: Go to Settings - Account - Reset Password.
-          </Text>
-        </View>
-
-        <View style={styles.faqItem}>
-          <Text style={styles.faqQuestion}>Q: How can I contact support?</Text>
-          <Text style={styles.faqAnswer}>
-            A: You can contact us through the form below or email us at
-            support@loanhub.com.
-          </Text>
-        </View>
+        {helpData.faq.map((item, index) => (
+          <View key={index} style={styles.faqItem}>
+            <Text style={styles.faqQuestion}>Q: {item.question}</Text>
+            <Text style={styles.faqAnswer}>A: {item.answer}</Text>
+          </View>
+        ))}
 
         <Text style={styles.sectionTitle}>Troubleshooting Tips</Text>
-        <Text style={styles.tip}>
-          1. Make sure your internet connection is stable.
-        </Text>
-        <Text style={styles.tip}>
-          2. Restart the app if you experience any crashes.
-        </Text>
-        <Text style={styles.tip}>
-          3. Update your app to the latest version from the App Store or Google
-          Play.
-        </Text>
+        {helpData.troubleshooting.map((tip, index) => (
+          <Text key={index} style={styles.tip}>{`${index + 1}. ${tip}`}</Text>
+        ))}
 
         <Text style={styles.sectionTitle}>Contact Support</Text>
         <Text style={styles.sectionDescription}>
@@ -101,22 +88,13 @@ export default function HelpAndSupportScreen() {
         </TouchableOpacity>
 
         <Text style={styles.sectionTitle}>Useful Links</Text>
-        <TouchableOpacity
-          onPress={() =>
-            Linking.openURL(
-              'https://github.com/codecraftwt/Loan-Management-App-New',
-            )
-          }>
-          <Text style={styles.link}>Privacy Policy</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() =>
-            Linking.openURL(
-              'https://github.com/codecraftwt/Loan-Management-App-New',
-            )
-          }>
-          <Text style={styles.link}>Terms of Service</Text>
-        </TouchableOpacity>
+        {helpData.usefulLinks.map((link, index) => (
+          <TouchableOpacity
+            key={index}
+            onPress={() => Linking.openURL(link.url)}>
+            <Text style={styles.link}>{link.title}</Text>
+          </TouchableOpacity>
+        ))}
       </ScrollView>
     </>
   );
@@ -125,8 +103,11 @@ export default function HelpAndSupportScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: m(20),
     backgroundColor: '#f5f5f5',
+  },
+  scrollContent: {
+    padding: m(20),
+    paddingBottom: m(30),
   },
   headerBar: {
     backgroundColor: '#b80266',
@@ -154,15 +135,16 @@ const styles = StyleSheet.create({
     fontSize: m(18),
     fontWeight: 'bold',
     color: '#333',
-    marginBlock: m(10),
+    marginBottom: m(8),
+    marginTop: m(8),
   },
   sectionDescription: {
     fontSize: m(16),
     color: '#555',
-    marginBottom: m(10),
+    marginBottom: m(12),
   },
   faqItem: {
-    marginBottom: m(10),
+    marginBottom: m(15),
   },
   faqQuestion: {
     fontSize: m(16),
@@ -173,11 +155,13 @@ const styles = StyleSheet.create({
     fontSize: m(16),
     color: '#555',
     marginLeft: m(10),
+    marginTop: m(5),
   },
   tip: {
     fontSize: m(16),
     color: '#555',
     marginLeft: m(10),
+    marginTop: m(5),
   },
   input: {
     height: m(100),
@@ -186,7 +170,8 @@ const styles = StyleSheet.create({
     borderRadius: m(8),
     padding: m(10),
     fontSize: m(16),
-    marginBottom: m(15),
+    marginBottom: m(20),
+    backgroundColor: '#fff',
   },
   link: {
     fontSize: m(16),
@@ -195,11 +180,11 @@ const styles = StyleSheet.create({
     marginBottom: m(10),
   },
   subscribeButton: {
-    backgroundColor: '#b80266',
+    backgroundColor: '#e74c3c',
     borderRadius: m(8),
-    paddingVertical: m(12),
+    paddingVertical: m(14),
     alignItems: 'center',
-    width: '100%',
+    marginBottom: m(20),
   },
   subscribeButtonText: {
     color: '#fff',

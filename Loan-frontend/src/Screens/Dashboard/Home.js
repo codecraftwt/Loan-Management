@@ -81,15 +81,15 @@ export default function Home() {
       <ScrollView
         contentContainerStyle={styles.cardsContainer}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }>
-
         <View style={styles.statsSection}>
-          <Text style={styles.welcomeText}>Welcome, {user?.userName || 'User'}</Text>
-          <Text style={styles.subtitle}>Track your loan activities at a glance</Text>
+          <Text style={styles.welcomeText}>
+            Welcome, {user?.userName || 'User'}
+          </Text>
+          <Text style={styles.subtitle}>
+            Track your loan activities at a glance
+          </Text>
 
           <View style={styles.statsWrapper}>
             {loanStats.map((stat, index) => (

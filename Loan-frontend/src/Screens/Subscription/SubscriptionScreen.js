@@ -9,6 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
+import {m} from 'walstar-rn-responsive';
 
 // Subscription Screen Component
 const SubscriptionScreen = ({navigation}) => {
@@ -151,7 +152,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 18,
     borderRadius: 10,
-    marginBottom: 16,
+    marginBottom: 18,
     width: '90%',
     borderWidth: 1,
     borderColor: '#ddd',
@@ -172,16 +173,16 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   subscribeButton: {
-    backgroundColor: '#b80266',
-    borderRadius: 8,
-    paddingVertical: 14,
+    backgroundColor: '#e74c3c',
+    borderRadius: m(8),
+    paddingVertical: m(14),
     alignItems: 'center',
     width: '90%',
-    marginTop: 20,
+    elevation: m(5),
   },
   subscribeButtonText: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: 'Poppins-SemiBold',
   },
 });

@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
     borderRadius: m(8),
     height: m(60),
     justifyContent: 'center',
-    alignItems: 'center',   
+    alignItems: 'center',
     elevation: m(4),
   },
   registerButtonText: {

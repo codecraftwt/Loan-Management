@@ -11,6 +11,7 @@ const initialState = {
   loanStats: [],
   loading: true,
   error: null,
+  aadharError: null,
 };
 
 // Thunks for various actions
@@ -168,17 +169,17 @@ const loanSlice = createSlice({
         state.loading = true;
         state.loans = [];
         state.totalAmount = 0;
-        state.error = null;
+        state.aadharError = null;
       })
       .addCase(getLoanByAadhar.fulfilled, (state, action) => {
         state.loading = false;
         state.loans = action.payload.loans;
         state.totalAmount = action.payload.totalAmount;
-        state.error = null;
+        state.aadharError = null;
       })
       .addCase(getLoanByAadhar.rejected, (state, action) => {
         state.loading = false;
-        state.error =
+        state.aadharError =
           action.payload || action.error?.message || 'Something went wrong';
       })
 

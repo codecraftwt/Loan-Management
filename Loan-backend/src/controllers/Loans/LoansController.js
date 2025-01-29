@@ -245,7 +245,7 @@ const getLoansByLender = async (req, res) => {
   try {
     const lenderId = req.user.id; // Extracting lender's ID from the JWT token
 
-    const loans = await Loan.find({ lenderId });
+    const loans = await Loan.find({ lenderId }).sort({ createdAt: -1 });
 
     if (!loans || loans.length === 0) {
       return res
@@ -270,7 +270,7 @@ const getLoansById = async (req, res) => {
   try {
     const Id = req.user.id; // Extracting lender's ID from the JWT token
 
-    const loans = await Loan.findById({ Id });
+    const loans = await Loan.findById({ Id }).sort({ createdAt: -1 });
 
     if (!loans || loans.length === 0) {
       return res.status(404).json({ message: "No loans found" });
@@ -300,6 +300,7 @@ const getLoanByAadhaar = async (req, res) => {
   try {
     // Fetch loans based on Aadhaar number
     const loans = await Loan.find({ aadhaarNumber })
+      .sort({ createdAt: -1 })
       .populate("lenderId", "userName email mobileNo")
       .exec();
 
@@ -310,30 +311,23 @@ const getLoanByAadhaar = async (req, res) => {
         .json({ message: "No loans found for this Aadhaar number" });
     }
 
-    // Calculate total loan amount
-    const totalAmount = loans.reduce((sum, loan) => sum + loan.amount, 0);
+    const pendingLoans = loans.filter(
+      (loan) =>
+        loan.status === "pending" &&
+        loan.borrowerAcceptanceStatus === "accepted"
+    );
 
-    // Fetch the user's profile image based on Aadhaar number
-    const user = await User.findOne({ aadharCardNo: aadhaarNumber })
-      .select("profileImage")
-      .lean()
-      .exec();
-
-    // Map loans data and include profile image if user is found
-    const loanDataWithProfile = loans.map((loan) => {
-      // If user is found, add the profile image, otherwise don't include it
-      const loanData = { ...loan.toObject() };
-      if (user) {
-        loanData.userProfileImage = user.profileImage; // Add profile image if user exists
-      }
-      return loanData;
-    });
+    // Calculate total amount for only pending loans
+    const totalAmount = pendingLoans.reduce(
+      (sum, loan) => sum + loan.amount,
+      0
+    );
 
     // Return the response with loan data, total amount, and user's profile image
     return res.status(200).json({
       message: "Loan data fetched successfully",
       totalAmount,
-      data: loanDataWithProfile,
+      data: loans,
     });
   } catch (error) {
     console.error("Error fetching loan data by Aadhaar:", error);
