@@ -263,11 +263,13 @@ const styles = StyleSheet.create({
   },
   userIcon: {
     marginHorizontal: m(10),
+    marginLeft: m(20),
   },
   userImage: {
     width: m(60),
     height: m(60),
     borderRadius: m(60),
+    marginLeft: m(10),
   },
   dataLabel: {
     fontSize: m(14),
