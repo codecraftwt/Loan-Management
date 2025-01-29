@@ -63,7 +63,7 @@ const SubscriptionScreen = ({navigation}) => {
                 styles.buttonText,
                 selectedPlan === 'Monthly' && styles.selectedButtonText,
               ]}>
-              Monthly Plan - ₹399
+              Monthly Plan - ₹99
             </Text>
           </TouchableOpacity>
 
@@ -79,7 +79,7 @@ const SubscriptionScreen = ({navigation}) => {
                 styles.buttonText,
                 selectedPlan === 'Yearly' && styles.selectedButtonText,
               ]}>
-              Yearly Plan - ₹2999
+              Yearly Plan - ₹899
             </Text>
           </TouchableOpacity>
 

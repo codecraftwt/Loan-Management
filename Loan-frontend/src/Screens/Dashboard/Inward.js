@@ -19,7 +19,7 @@ import {
 import {useFocusEffect} from '@react-navigation/native';
 import moment from 'moment';
 import {logo} from '../../Assets';
-import PromptBox from '../PromptBox.js/Prompt';
+import PromptBox from '../PromptBox/Prompt';
 import Toast from 'react-native-toast-message';
 import LoaderSkeleton from '../../Components/LoaderSkeleton';
 import {m} from 'walstar-rn-responsive';

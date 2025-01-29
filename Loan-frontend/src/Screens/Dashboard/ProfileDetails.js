@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
-import PromptBox from '../PromptBox.js/Prompt';
+import PromptBox from '../PromptBox/Prompt';
 import {
   deleteProfileImage,
   logout,

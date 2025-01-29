@@ -11,7 +11,7 @@ import React, {useState, useEffect} from 'react';
 import Icon from 'react-native-vector-icons/Feather';
 import {useNavigation} from '@react-navigation/native';
 import {useDispatch, useSelector} from 'react-redux';
-import PromptBox from '../PromptBox.js/Prompt';
+import PromptBox from '../PromptBox/Prompt';
 import {logout, removeUserDeviceToken} from '../../Redux/Slices/authslice';
 import useFetchUserFromStorage from '../../Redux/hooks/useFetchUserFromStorage';
 import {m} from 'walstar-rn-responsive';

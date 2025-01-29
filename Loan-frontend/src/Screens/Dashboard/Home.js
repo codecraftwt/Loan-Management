@@ -88,7 +88,7 @@ export default function Home() {
         }>
 
         <View style={styles.statsSection}>
-          <Text style={styles.welcomeText}>Welcome, {user?.name || 'User'}</Text>
+          <Text style={styles.welcomeText}>Welcome, {user?.userName || 'User'}</Text>
           <Text style={styles.subtitle}>Track your loan activities at a glance</Text>
 
           <View style={styles.statsWrapper}>

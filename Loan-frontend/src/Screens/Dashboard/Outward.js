@@ -15,8 +15,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import {useDispatch, useSelector} from 'react-redux';
 import {getLoanByLender, updateLoanStatus} from '../../Redux/Slices/loanSlice';
 import moment from 'moment';
-import {logo} from '../../Assets';
-import PromptBox from '../PromptBox.js/Prompt';
+import PromptBox from '../PromptBox/Prompt';
 import Toast from 'react-native-toast-message';
 import LoaderSkeleton from '../../Components/LoaderSkeleton';
 import {m} from 'walstar-rn-responsive';
@@ -147,8 +146,17 @@ const Outward = ({navigation}) => {
                       </Text>
                       <Text style={styles.dataLabel}>
                         Status:{' '}
-                        <Text style={styles.dataText}>{loan.status}</Text>
+                        <Text
+                          style={[
+                            styles.dataText,
+                            loan.status === 'paid'
+                              ? styles.paidStatus
+                              : styles.pendingStatus,
+                          ]}>
+                          {loan.status}
+                        </Text>
                       </Text>
+
                       <Text style={styles.dataLabel}>
                         Loan End Date:{' '}
                         <Text style={styles.dataText}>
@@ -156,21 +164,26 @@ const Outward = ({navigation}) => {
                         </Text>
                       </Text>
                     </View>
-                    <TouchableOpacity
-                      style={styles.statusUpdateButton}
-                      onPress={() => handleStatusUpdate(loan)}>
-                      <Icon
-                        name={
-                          loan.status === 'pending'
-                            ? 'check-box-outline-blank'
-                            : 'check-box'
-                        }
-                        size={28}
-                        color={
-                          loan.status === 'pending' ? '#b80266' : '#4CAF50'
-                        }
-                      />
-                    </TouchableOpacity>
+                    {/* {loan?.status === 'pending' && (
+                      <TouchableOpacity
+                        style={styles.statusUpdateButton}
+                        onPress={() => handleStatusUpdate(loan)}>
+                        <Icon
+                          name={
+                            loan.status === 'paid'
+                              ? 'check-circle'
+                              : 'access-time'
+                          }
+                          size={20}
+                          color="#fff"
+                        />
+                        <Text style={styles.statusUpdateText}>
+                          {loan.status === 'paid'
+                            ? 'Mark as Pending'
+                            : 'Mark as Paid'}
+                        </Text>
+                      </TouchableOpacity>
+                    )} */}
                   </View>
                 </View>
               </TouchableOpacity>
@@ -199,7 +212,6 @@ const styles = StyleSheet.create({
   textContainer: {
     flexDirection: 'column',
     marginTop: m(10),
-    flex: 1,
   },
   plusButton: {
     backgroundColor: '#fff',
@@ -269,11 +281,10 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   searchBarContainer: {
-    flex: 1,
     flexDirection: 'row',
     paddingHorizontal: m(15),
     marginTop: m(20),
-    marginBottom: m(10),
+    marginBottom: m(15),
   },
   searchInput: {
     flex: 1,
@@ -294,6 +305,22 @@ const styles = StyleSheet.create({
   statusUpdateButton: {
     marginLeft: m(10),
     marginRight: m(5),
+    backgroundColor: '#b80266',
+    padding: m(6),
+    borderRadius: m(5),
+    alignItems: 'center',
+  },
+  statusUpdateText: {
+    fontSize: m(11),
+    color: '#fff',
+    fontWeight: '600',
+  },
+
+  paidStatus: {
+    color: 'green',
+  },
+  pendingStatus: {
+    color: 'red',
   },
 });
 
