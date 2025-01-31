@@ -6,10 +6,11 @@ const {
   sendLoanStatusNotification,
   sendLoanUpdateNotification,
 } = require("../../services/notificationService");
+const { generateLoanAgreement } = require("../../services/agreementService");
 
 const AddLoan = async (req, res) => {
   try {
-    const lenderId = req.user.id; //get from JWT
+    const lenderId = req.user.id;
     const LoanData = req.body;
 
     // Check if the user has an active subscription
@@ -30,6 +31,11 @@ const AddLoan = async (req, res) => {
       lenderId,
     });
 
+    // Generate loan agreement
+    const agreementText = generateLoanAgreement(createLoan, req.user);
+    createLoan.agreement = agreementText;
+
+    // Save the loan with the generated agreement
     await createLoan.save();
 
     await sendLoanUpdateNotification(LoanData.aadhaarNumber, LoanData);

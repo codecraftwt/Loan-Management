@@ -11,6 +11,7 @@ import Icon from 'react-native-vector-icons/Feather';
 import moment from 'moment';
 import {m} from 'walstar-rn-responsive';
 import {useSelector} from 'react-redux';
+import AgreementModal from '../PromptBox/AgreementModal';
 
 const LoanDetailRow = ({label, value, icon}) => (
   <View style={styles.row}>
@@ -25,6 +26,8 @@ const LoanDetailRow = ({label, value, icon}) => (
 export default function PersonalLoan({route, navigation}) {
   const {loanDetails, isEdit} = route.params;
   const user = useSelector(state => state.auth.user);
+
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
   const handleBack = () => navigation.goBack();
 
@@ -123,8 +126,20 @@ export default function PersonalLoan({route, navigation}) {
           {loanInfo.map((item, index) => (
             <LoanDetailRow key={index} {...item} />
           ))}
+
+          <TouchableOpacity
+            style={styles.viewAgreementButton}
+            onPress={() => setIsModalVisible(true)}>
+            <Text style={styles.viewAgreementText}>View Agreement</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
+
+      <AgreementModal
+        isVisible={isModalVisible}
+        agreement={loanDetails.agreement}
+        onClose={() => setIsModalVisible(false)}
+      />
     </View>
   );
 }
@@ -277,6 +292,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   statusUpdateText: {
+    color: '#FFF',
+    fontSize: m(16),
+    fontFamily: 'Poppins-SemiBold',
+  },
+  viewAgreementButton: {
+    backgroundColor: '#b80266',
+    paddingVertical: m(12),
+    paddingHorizontal: m(20),
+    borderRadius: m(8),
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: m(20),
+  },
+  viewAgreementText: {
     color: '#FFF',
     fontSize: m(16),
     fontFamily: 'Poppins-SemiBold',

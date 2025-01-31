@@ -14,10 +14,13 @@ import {useDispatch, useSelector} from 'react-redux';
 import {getLoanByAadhar} from '../../Redux/Slices/loanSlice';
 import {m} from 'walstar-rn-responsive';
 import LoaderSkeleton from '../../Components/LoaderSkeleton';
+import AgreementModal from '../PromptBox/AgreementModal';
 
 const OldHistoryPage = ({route, navigation}) => {
   const {aadharNo} = route.params;
   const [expandedLoanIndex, setExpandedLoanIndex] = useState(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedLoanAgreement, setSelectedLoanAgreement] = useState(null);
   const dispatch = useDispatch();
   const {loans, totalAmount, loading, error} = useSelector(
     state => state.loans,
@@ -38,6 +41,11 @@ const OldHistoryPage = ({route, navigation}) => {
   };
 
   const borrower = loans && loans[0];
+
+  const handleViewAgreement = agreement => {
+    setSelectedLoanAgreement(agreement); // Set the selected loan agreement
+    setIsModalVisible(true); // Show the modal
+  };
 
   return (
     <>
@@ -96,9 +104,18 @@ const OldHistoryPage = ({route, navigation}) => {
                     <TouchableOpacity
                       onPress={() => toggleDetails(index)}
                       style={styles.loanNameContainer}>
-                      <Text style={styles.loanName}>
-                        Loan Reason: {loan?.purpose} ({loan?.amount} Rs)
-                      </Text>
+                      <View
+                        style={{
+                          flex: 1,
+                          flexDirection: 'row',
+                          justifyContent: 'space-between',
+                        }}>
+                        <Text style={styles.loanName}>
+                          {loan?.purpose?.split(' ').slice(0, 3).join(' ')}
+                        </Text>
+                        <Text style={styles.loanName}>({loan?.amount} Rs)</Text>
+                      </View>
+
                       <Icon
                         name={
                           expandedLoanIndex === index
@@ -143,13 +160,12 @@ const OldHistoryPage = ({route, navigation}) => {
                           </Text>
                         </View>
 
-                        {/* Agreement and Digital Signature Links */}
                         <TouchableOpacity
-                          onPress={() => Linking.openURL(loan?.agreement)}
-                          style={styles.linkButton}>
+                          style={styles.linkButton}
+                          onPress={() => handleViewAgreement(loan.agreement)}>
                           <Text style={styles.linkText}>View Agreement</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity
+                        {/* <TouchableOpacity
                           onPress={() =>
                             Linking.openURL(loan?.digitalSignature)
                           }
@@ -157,7 +173,7 @@ const OldHistoryPage = ({route, navigation}) => {
                           <Text style={styles.linkText}>
                             View Digital Signature
                           </Text>
-                        </TouchableOpacity>
+                        </TouchableOpacity> */}
                       </View>
                     )}
                   </View>
@@ -166,6 +182,12 @@ const OldHistoryPage = ({route, navigation}) => {
           )}
         </ScrollView>
       )}
+
+      <AgreementModal
+        isVisible={isModalVisible}
+        agreement={selectedLoanAgreement}
+        onClose={() => setIsModalVisible(false)}
+      />
     </>
   );
 };

@@ -10,6 +10,7 @@ import {
   Platform,
   Keyboard,
   ActivityIndicator,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
@@ -25,48 +26,50 @@ import {m} from 'walstar-rn-responsive';
 
 export default function AddDetails({route, navigation}) {
   const dispatch = useDispatch();
-
   const {loans, error, aadharError, loading} = useSelector(
     state => state.loans,
   );
-
   const {loanDetails} = route.params || {};
 
-  const [fullName, setFullName] = useState(loanDetails?.name || '');
-  const [contactNo, setContactNo] = useState(loanDetails?.mobileNumber || '');
-  const [aadharNo, setAadharNo] = useState(loanDetails?.aadhaarNumber || '');
-  const [address, setAddress] = useState(loanDetails?.address || '');
-  const [amount, setAmount] = useState(loanDetails?.amount.toString() || '');
-  const [loanStartDate, setLoanStartDate] = useState(
-    loanDetails?.loanStartDate || null,
-  );
-  const [loanEndDate, setLoanEndDate] = useState(
-    loanDetails?.loanEndDate || null,
-  );
-  const [purpose, setPurpose] = useState(loanDetails?.purpose || '');
+  // State variables
+  const [formData, setFormData] = useState({
+    name: loanDetails?.name || '',
+    mobileNumber: loanDetails?.mobileNumber || '',
+    aadhaarNumber: loanDetails?.aadhaarNumber || '',
+    address: loanDetails?.address || '',
+    amount: loanDetails?.amount?.toString() || '',
+    loanStartDate: loanDetails?.loanStartDate || null,
+    loanEndDate: loanDetails?.loanEndDate || null,
+    purpose: loanDetails?.purpose || '',
+  });
   const [errorMessage, setErrorMessage] = useState('');
   const [showOldHistoryButton, setShowOldHistoryButton] = useState(false);
-
   const [isStartDatePickerVisible, setStartDatePickerVisible] = useState(false);
   const [isEndDatePickerVisible, setEndDatePickerVisible] = useState(false);
-
   const [profileImage, setProfileImage] = useState('');
-
-  // Get today's date (current date) for min date validation
-  const today = new Date();
-  const todayString = today.toISOString().split('T')[0];
 
   useEffect(() => {
     const userProfileImage = loans[0]?.userProfileImage;
     setProfileImage(userProfileImage);
-  }, [loans, aadharNo]);
+  }, [loans, formData.aadhaarNumber]);
 
-  // Function to validate form fields
+  // Validate form fields
   const validateForm = () => {
+    const {
+      name,
+      mobileNumber,
+      aadhaarNumber,
+      address,
+      amount,
+      loanStartDate,
+      loanEndDate,
+      purpose,
+    } = formData;
+
     if (
-      !fullName ||
-      !contactNo ||
-      !aadharNo ||
+      !name ||
+      !mobileNumber ||
+      !aadhaarNumber ||
       !address ||
       !amount ||
       !loanStartDate ||
@@ -80,8 +83,7 @@ export default function AddDetails({route, navigation}) {
       setErrorMessage('Amount should be a positive number.');
       return false;
     }
-    // Check if start date is before end date
-    if (loanStartDate && loanEndDate && loanStartDate >= loanEndDate) {
+    if (loanStartDate >= loanEndDate) {
       setErrorMessage('Loan start date must be before loan end date.');
       return false;
     }
@@ -90,286 +92,257 @@ export default function AddDetails({route, navigation}) {
     return true;
   };
 
-  // Function to handle form submission
+  // Handle form submission
   const handleSubmit = async () => {
-    if (validateForm()) {
-      const newData = {
-        name: fullName,
-        mobileNumber: contactNo,
-        aadhaarNumber: aadharNo,
-        address,
-        amount: parseFloat(amount),
-        loanStartDate,
-        loanEndDate,
-        purpose,
-        profileImage,
-      };
+    Keyboard.dismiss();
+    if (!validateForm()) return;
 
-      try {
-        let response;
-        if (loanDetails) {
-          // If loanDetails exists, update the loan
-          response = await dispatch(
-            updateLoan({...newData, id: loanDetails._id}),
-          );
-          console.log('update API', loanDetails._id);
-        } else {
-          // Otherwise, create a new loan
-          response = await dispatch(createLoan(newData));
-        }
+    const newData = {
+      ...formData,
+      amount: parseFloat(formData.amount),
+      profileImage,
+    };
 
-        if (
-          createLoan.fulfilled.match(response) ||
-          updateLoan.fulfilled.match(response)
-        ) {
-          console.log('Loan saved successfully');
-          Toast.show({
-            type: 'success',
-            position: 'top',
-            text1: 'Loan saved successfully',
-          });
-          navigation.navigate('BottomNavigation', {
-            screen: 'Outward',
-          });
-        } else {
-          if (response.payload && response.payload.errors) {
-            setErrorMessage(response.payload.errors.join(', '));
-          }
-        }
-      } catch (error) {
-        console.error('Error submitting data:', error.response.data.message);
-        setErrorMessage('An error occurred while saving the loan.');
+    try {
+      const action = loanDetails
+        ? updateLoan({...newData, id: loanDetails._id})
+        : createLoan(newData);
+      const response = await dispatch(action);
+
+      if (
+        createLoan.fulfilled.match(response) ||
+        updateLoan.fulfilled.match(response)
+      ) {
+        Toast.show({
+          type: 'success',
+          position: 'top',
+          text1: 'Loan saved successfully',
+        });
+        navigation.navigate('BottomNavigation', {screen: 'Outward'});
+      } else {
+        setErrorMessage(
+          response.payload?.errors?.join(', ') || 'An error occurred.',
+        );
       }
+    } catch (error) {
+      console.error('Error submitting data:', error);
+      setErrorMessage('An error occurred while saving the loan.');
     }
   };
 
-  // Function to reset the form
+  // Reset form fields
   const resetForm = () => {
-    setFullName('');
-    setContactNo('');
-    setAadharNo('');
-    setAddress('');
-    setAmount('');
-    setLoanStartDate('');
-    setLoanEndDate('');
-    setPurpose('');
+    setFormData({
+      name: '',
+      mobileNumber: '',
+      aadhaarNumber: '',
+      address: '',
+      amount: '',
+      loanStartDate: null,
+      loanEndDate: null,
+      purpose: '',
+    });
     setErrorMessage('');
     setShowOldHistoryButton(false);
   };
 
-  const dismissKeyboard = () => {
-    Keyboard.dismiss();
-  };
-
+  // Handle Aadhar number change
   const handleAadharChange = text => {
-    const isValidAadhar = /^\d{0,12}$/.test(text);
-    if (!isValidAadhar) return;
-
-    setAadharNo(text);
-
-    const isValidLength = text.length === 12;
-    setShowOldHistoryButton(isValidLength);
-
-    if (isValidLength) {
-      dispatch(getLoanByAadhar(text));
-    }
+    if (!/^\d{0,12}$/.test(text)) return;
+    setFormData({...formData, aadhaarNumber: text});
+    setShowOldHistoryButton(text.length === 12);
+    if (text.length === 12) dispatch(getLoanByAadhar(text));
   };
 
+  // Handle contact number change
   const handleContactNoChange = text => {
-    const mobilePattern = /^[0-9]{0,10}$/;
-    if (mobilePattern.test(text) && text.length <= 10) {
-      setContactNo(text);
+    if (/^[0-9]{0,10}$/.test(text)) {
+      setFormData({...formData, mobileNumber: text});
     }
   };
 
-  // Handle the loan start date change
-  const handleLoanStartDateChange = date => {
-    setLoanStartDate(date);
-    setStartDatePickerVisible(false);
+  // Handle date picker changes
+  const handleDateChange = (type, date) => {
+    setFormData({...formData, [type]: date});
+    if (type === 'loanStartDate') setStartDatePickerVisible(false);
+    else setEndDatePickerVisible(false);
   };
 
-  // Handle the loan end date change
-  const handleLoanEndDateChange = date => {
-    setLoanEndDate(date);
-    setEndDatePickerVisible(false);
-  };
-
-  console.log('aadharError ---------->', aadharError);
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
-      <View style={styles.headerBar}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}>
-          <Icon name="arrow-back" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerText}>
-          {loanDetails ? 'Edit Loan Details' : 'Add Loan Details'}
-        </Text>
-      </View>
-      <ScrollView style={styles.scrollViewContainer}>
-        <Text style={styles.msgText}>
-          Fill the below form to {loanDetails ? 'update' : 'add'} loan
-        </Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Full Name"
-          value={fullName}
-          onChangeText={setFullName}
-          onBlur={dismissKeyboard}
-          returnKeyType="next"
-          placeholderTextColor="#888"
-        />
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 20}>
+        <View style={styles.headerBar}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}>
+            <Icon name="arrow-back" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+          <Text style={styles.headerText}>
+            {loanDetails ? 'Edit Loan Details' : 'Add Loan Details'}
+          </Text>
+        </View>
+        <ScrollView
+          style={styles.scrollViewContainer}
+          keyboardShouldPersistTaps="handled">
+          <Text style={styles.msgText}>
+            Fill the below form to {loanDetails ? 'update' : 'add'} loan
+          </Text>
 
-        <View style={styles.phoneInputContainer}>
           <TextInput
-            style={styles.inputCode}
-            placeholder={`Contact Number`}
-            value={contactNo}
+            style={styles.input}
+            placeholder="Full Name"
+            value={formData.name}
+            onChangeText={text => setFormData({...formData, name: text})}
+            placeholderTextColor="#888"
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Contact Number"
+            value={formData.mobileNumber}
             onChangeText={handleContactNoChange}
             keyboardType="numeric"
-            returnKeyType="next"
             placeholderTextColor="#888"
           />
-        </View>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Aadhar Card No"
-          value={aadharNo}
-          onChangeText={handleAadharChange}
-          onBlur={dismissKeyboard}
-          keyboardType="numeric"
-          returnKeyType="next"
-          placeholderTextColor="#888"
-        />
-
-        {showOldHistoryButton &&
-          (aadharError === null || aadharError === '' ? (
-            <TouchableOpacity
-              style={styles.oldHistoryButton}
-              onPress={() => navigation.navigate('OldHistoryPage', {aadharNo})}>
-              <Text style={styles.oldHistoryButtonText}>Old History</Text>
-            </TouchableOpacity>
-          ) : (
-            <Text style={styles.aadharText}>
-              {typeof aadharError === 'object' && aadharError?.message
-                ? aadharError.message
-                : aadharError || 'Aadhar number not found'}
-            </Text>
-          ))}
-
-        {(errorMessage || error) && (
-          <Text style={styles.errorText}>
-            {errorMessage || error?.message || 'An unknown error occurred.'}
-          </Text>
-        )}
-
-        <TextInput
-          style={styles.textArea}
-          placeholder="Address"
-          value={address}
-          onChangeText={setAddress}
-          onBlur={dismissKeyboard}
-          multiline
-          textAlignVertical="top"
-          placeholderTextColor="#888"
-        />
-
-        <View style={styles.loanAmountWrapper}>
           <TextInput
-            style={styles.loanAmountInput}
-            placeholder="Amount"
-            value={amount}
-            onChangeText={setAmount}
-            onBlur={dismissKeyboard}
+            style={styles.input}
+            placeholder="Aadhar Card No"
+            value={formData.aadhaarNumber}
+            onChangeText={handleAadharChange}
             keyboardType="numeric"
-            returnKeyType="done"
             placeholderTextColor="#888"
           />
-          <Text style={styles.rsText}>Rs</Text>
-        </View>
 
-        <TouchableOpacity onPress={() => setStartDatePickerVisible(true)}>
-          <TextInput
-            style={styles.input}
-            placeholder="Loan Start Date"
-            value={
-              loanStartDate ? new Date(loanStartDate).toLocaleDateString() : ''
-            }
-            editable={false}
-            placeholderTextColor="#888"
-          />
-        </TouchableOpacity>
-
-        <DateTimePickerModal
-          isVisible={isStartDatePickerVisible}
-          mode="date"
-          onConfirm={handleLoanStartDateChange}
-          onCancel={() => setStartDatePickerVisible(false)}
-          minimumDate={today}
-        />
-
-        <TouchableOpacity onPress={() => setEndDatePickerVisible(true)}>
-          <TextInput
-            style={styles.input}
-            placeholder="Loan End Date"
-            value={
-              loanEndDate ? new Date(loanEndDate).toLocaleDateString() : ''
-            }
-            editable={false}
-            placeholderTextColor="#888"
-          />
-        </TouchableOpacity>
-
-        <DateTimePickerModal
-          isVisible={isEndDatePickerVisible}
-          mode="date"
-          onConfirm={handleLoanEndDateChange}
-          onCancel={() => setEndDatePickerVisible(false)}
-          minimumDate={loanStartDate || today}
-        />
-
-        <TextInput
-          style={styles.textArea}
-          placeholder="Purpose"
-          value={purpose}
-          onChangeText={setPurpose}
-          onBlur={dismissKeyboard}
-          multiline
-          textAlignVertical="top"
-          placeholderTextColor="#888"
-        />
-
-        {(errorMessage || error) && (
-          <Text style={styles.errorText}>
-            {errorMessage || error?.message || 'An unknown error occurred.'}
-          </Text>
-        )}
-
-        <View style={styles.buttonsContainer}>
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={handleSubmit}
-            disabled={loading}>
-            {loading ? (
-              <ActivityIndicator size="small" color="#FFF" />
-            ) : (
-              <Text style={styles.buttonText}>
-                {loanDetails ? 'Update' : 'Add'}
+          {showOldHistoryButton &&
+            (aadharError ? (
+              <Text style={styles.aadharText}>
+                {aadharError.message || 'Aadhar number not found'}
               </Text>
-            )}
+            ) : (
+              <TouchableOpacity
+                style={styles.oldHistoryButton}
+                onPress={() =>
+                  navigation.navigate('OldHistoryPage', {
+                    aadharNo: formData.aadhaarNumber,
+                  })
+                }>
+                <Text style={styles.oldHistoryButtonText}>Old History</Text>
+              </TouchableOpacity>
+            ))}
+
+          <TextInput
+            style={styles.textArea}
+            placeholder="Address"
+            value={formData.address}
+            onChangeText={text => setFormData({...formData, address: text})}
+            multiline
+            placeholderTextColor="#888"
+          />
+
+          <View style={styles.loanAmountWrapper}>
+            <TextInput
+              style={styles.loanAmountInput}
+              placeholder="Amount"
+              value={formData.amount}
+              onChangeText={text => setFormData({...formData, amount: text})}
+              keyboardType="numeric"
+              placeholderTextColor="#888"
+            />
+            <Text style={styles.rsText}>Rs</Text>
+          </View>
+
+          <TouchableOpacity
+            onPress={() => {
+              Keyboard.dismiss();
+              setStartDatePickerVisible(true);
+            }}>
+            <TextInput
+              style={styles.input}
+              placeholder="Loan Start Date"
+              value={
+                formData.loanStartDate
+                  ? new Date(formData.loanStartDate).toLocaleDateString()
+                  : ''
+              }
+              editable={false}
+              placeholderTextColor="#888"
+            />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.resetButton} onPress={resetForm}>
-            <Text style={styles.resetButtonText}>Reset</Text>
+          <DateTimePickerModal
+            isVisible={isStartDatePickerVisible}
+            mode="date"
+            onConfirm={date => handleDateChange('loanStartDate', date)}
+            onCancel={() => setStartDatePickerVisible(false)}
+            minimumDate={new Date()}
+          />
+
+          <TouchableOpacity
+            onPress={() => {
+              Keyboard.dismiss();
+              setEndDatePickerVisible(true);
+            }}>
+            <TextInput
+              style={styles.input}
+              placeholder="Loan End Date"
+              value={
+                formData.loanEndDate
+                  ? new Date(formData.loanEndDate).toLocaleDateString()
+                  : ''
+              }
+              editable={false}
+              placeholderTextColor="#888"
+            />
           </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+
+          <DateTimePickerModal
+            isVisible={isEndDatePickerVisible}
+            mode="date"
+            onConfirm={date => handleDateChange('loanEndDate', date)}
+            onCancel={() => setEndDatePickerVisible(false)}
+            minimumDate={new Date()}
+          />
+
+          <TextInput
+            style={styles.textArea}
+            placeholder="Purpose"
+            value={formData.purpose}
+            onChangeText={text => setFormData({...formData, purpose: text})}
+            multiline
+            placeholderTextColor="#888"
+          />
+
+          {(errorMessage || error) && (
+            <Text style={styles.errorText}>
+              {errorMessage || error?.message || 'An unknown error occurred.'}
+            </Text>
+          )}
+
+          <View style={styles.buttonsContainer}>
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={handleSubmit}
+              disabled={loading}>
+              {loading ? (
+                <ActivityIndicator size="small" color="#FFF" />
+              ) : (
+                <Text style={styles.buttonText}>
+                  {loanDetails ? 'Update' : 'Add'}
+                </Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.resetButton} onPress={resetForm}>
+              <Text style={styles.resetButtonText}>Reset</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -505,32 +478,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: m(16),
     fontWeight: 'bold',
-  },
-  phoneInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderColor: '#ccc',
-    paddingVertical: m(5),
-    marginBottom: m(10),
-    position: 'relative',
-    borderRadius: m(10),
-  },
-  inputCode: {
-    flex: 1,
-    height: m(42),
-    borderColor: '#ccc',
-    borderWidth: 1,
-    paddingLeft: m(12),
-    paddingRight: m(10),
-    borderRadius: m(10),
-    fontSize: m(15),
-    color: '#000',
-  },
-  countryPickerContainer: {
-    position: 'absolute',
-    left: m(10),
-    zIndex: 1,
-    top: m(8),
-    color: '#000',
   },
 });
