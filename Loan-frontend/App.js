@@ -24,7 +24,7 @@ export default function App() {
           <StatusBar barStyle="dark-content" backgroundColor="#FAFAFA" />
           <Navigation />
 
-          <Toast config={toastConfig} />
+          <Toast config = {toastConfig} />
         </NavigationContainer>
       </PaperProvider>
     </Provider>
