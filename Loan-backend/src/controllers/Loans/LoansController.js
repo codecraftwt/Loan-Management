@@ -7,6 +7,7 @@ const {
   sendLoanUpdateNotification,
 } = require("../../services/notificationService");
 const { generateLoanAgreement } = require("../../services/agreementService");
+const paginateQuery = require("../../utils/pagination");
 
 const AddLoan = async (req, res) => {
   try {
@@ -247,13 +248,60 @@ const updateLoanAcceptanceStatus = async (req, res) => {
   }
 };
 
+// const getLoansByLender = async (req, res) => {
+//   try {
+//     const lenderId = req.user.id; // Extracting lender's ID from the JWT token
+
+//     const loans = await Loan.find({ lenderId }).sort({ createdAt: -1 });
+
+//     if (!loans || loans.length === 0) {
+//       return res
+//         .status(404)
+//         .json({ message: "No loans found for this lender" });
+//     }
+
+//     return res.status(200).json({
+//       message: "Loans fetched successfully",
+//       data: loans,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({
+//       message: "Server Error",
+//       error: error.message,
+//     });
+//   }
+// };
+
 const getLoansByLender = async (req, res) => {
   try {
-    const lenderId = req.user.id; // Extracting lender's ID from the JWT token
+    const lenderId = req.user.id;
+    let { page, limit, startDate, endDate, status, minAmount, maxAmount } =
+      req.query;
 
-    const loans = await Loan.find({ lenderId }).sort({ createdAt: -1 });
+    minAmount = minAmount ? Number(minAmount) : undefined;
+    maxAmount = maxAmount ? Number(maxAmount) : undefined;
 
-    if (!loans || loans.length === 0) {
+    const query = { lenderId };
+
+    if (startDate) query.loanStartDate = { $gte: new Date(startDate) };
+    if (endDate)
+      query.loanEndDate = { ...query.loanEndDate, $lte: new Date(endDate) };
+    if (status) query.status = status;
+    if (minAmount !== undefined || maxAmount !== undefined) {
+      query.amount = {};
+      if (minAmount !== undefined) query.amount.$gte = minAmount;
+      if (maxAmount !== undefined) query.amount.$lte = maxAmount;
+    }
+
+    const { data: loans, pagination } = await paginateQuery(
+      Loan,
+      query,
+      page,
+      limit
+    );
+
+    if (!loans.length) {
       return res
         .status(404)
         .json({ message: "No loans found for this lender" });
@@ -262,6 +310,7 @@ const getLoansByLender = async (req, res) => {
     return res.status(200).json({
       message: "Loans fetched successfully",
       data: loans,
+      pagination,
     });
   } catch (error) {
     console.error(error);
