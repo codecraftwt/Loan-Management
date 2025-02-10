@@ -1,9 +1,21 @@
-const paginateQuery = async (model, query, page = 1, limit = 10, sort = { createdAt: -1 }) => {
+const paginateQuery = async (
+    model,
+    query,
+    page = 1,
+    limit = 10,
+    options = { sort: { createdAt: -1 }, populate: "", select: "" }
+  ) => {
     page = Math.max(1, Number(page));
     limit = Math.max(1, Number(limit));
   
+    const queryBuilder = model.find(query);
+  
+    if (options.sort) queryBuilder.sort(options.sort);
+    if (options.populate) queryBuilder.populate(options.populate);
+    if (options.select) queryBuilder.select(options.select);
+  
     const [data, totalDocuments] = await Promise.all([
-      model.find(query).sort(sort).skip((page - 1) * limit).limit(limit),
+      queryBuilder.skip((page - 1) * limit).limit(limit).exec(),
       model.countDocuments(query),
     ]);
   
@@ -18,4 +30,3 @@ const paginateQuery = async (model, query, page = 1, limit = 10, sort = { create
   };
   
   module.exports = paginateQuery;
-  

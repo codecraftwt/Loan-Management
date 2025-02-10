@@ -344,26 +344,98 @@ const getLoansById = async (req, res) => {
   }
 };
 
-const getLoanByAadhaar = async (req, res) => {
-  const { aadhaarNumber } = req.query;
+// const getLoanByAadhaar = async (req, res) => {
+//   const { aadhaarNumber } = req.query;
 
-  // Validate Aadhaar Number
+//   // Validate Aadhaar Number
+//   if (!aadhaarNumber) {
+//     return res.status(400).json({ message: "Aadhaar number is required" });
+//   }
+
+//   try {
+//     // Fetch loans based on Aadhaar number
+//     const loans = await Loan.find({ aadhaarNumber })
+//       .sort({ createdAt: -1 })
+//       .populate("lenderId", "userName email mobileNo")
+//       .exec();
+
+//     // Check if loans are found
+//     if (loans.length === 0) {
+//       return res
+//         .status(404)
+//         .json({ message: "No loans found for this Aadhaar number" });
+//     }
+
+//     const pendingLoans = loans.filter(
+//       (loan) =>
+//         loan.status === "pending" &&
+//         loan.borrowerAcceptanceStatus === "accepted"
+//     );
+
+//     // Calculate total amount for only pending loans
+//     const totalAmount = pendingLoans.reduce(
+//       (sum, loan) => sum + loan.amount,
+//       0
+//     );
+
+//     // Return the response with loan data, total amount, and user's profile image
+//     return res.status(200).json({
+//       message: "Loan data fetched successfully",
+//       totalAmount,
+//       data: loans,
+//     });
+//   } catch (error) {
+//     console.error("Error fetching loan data by Aadhaar:", error);
+//     return res.status(500).json({
+//       message: "Server error. Please try again later.",
+//       error: error.message,
+//     });
+//   }
+// };
+
+const getLoanByAadhaar = async (req, res) => {
+  const {
+    aadhaarNumber,
+    page,
+    limit,
+    startDate,
+    endDate,
+    status,
+    minAmount,
+    maxAmount,
+  } = req.query;
+
   if (!aadhaarNumber) {
     return res.status(400).json({ message: "Aadhaar number is required" });
   }
 
   try {
-    // Fetch loans based on Aadhaar number
-    const loans = await Loan.find({ aadhaarNumber })
-      .sort({ createdAt: -1 })
-      .populate("lenderId", "userName email mobileNo")
-      .exec();
+    const query = { aadhaarNumber };
 
-    // Check if loans are found
+    // Add filters
+    if (startDate) query.loanStartDate = { $gte: new Date(startDate) };
+    if (endDate) query.loanEndDate = { $lte: new Date(endDate) };
+    if (status) query.status = status;
+    if (minAmount !== undefined || maxAmount !== undefined) {
+      query.amount = {};
+      if (minAmount !== undefined) query.amount.$gte = Number(minAmount);
+      if (maxAmount !== undefined) query.amount.$lte = Number(maxAmount);
+    }
+
+    // Pagination and options
+    const { data: loans, pagination } = await paginateQuery(
+      Loan,
+      query,
+      page,
+      limit,
+      {
+        sort: { createdAt: -1 },
+        populate: { path: "lenderId", select: "userName email mobileNo" },
+      }
+    );
+
     if (loans.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No loans found for this Aadhaar number" });
+      return res.status(404).json({ message: "No loans found" });
     }
 
     const pendingLoans = loans.filter(
@@ -371,23 +443,21 @@ const getLoanByAadhaar = async (req, res) => {
         loan.status === "pending" &&
         loan.borrowerAcceptanceStatus === "accepted"
     );
-
-    // Calculate total amount for only pending loans
     const totalAmount = pendingLoans.reduce(
       (sum, loan) => sum + loan.amount,
       0
     );
 
-    // Return the response with loan data, total amount, and user's profile image
     return res.status(200).json({
       message: "Loan data fetched successfully",
       totalAmount,
       data: loans,
+      pagination,
     });
   } catch (error) {
-    console.error("Error fetching loan data by Aadhaar:", error);
+    console.error("Error:", error);
     return res.status(500).json({
-      message: "Server error. Please try again later.",
+      message: "Server error",
       error: error.message,
     });
   }
