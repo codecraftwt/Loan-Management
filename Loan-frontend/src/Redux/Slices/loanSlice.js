@@ -12,58 +12,103 @@ const initialState = {
   loading: true,
   error: null,
   aadharError: null,
+  pagination: {
+    page: 1,
+    limit: 10,
+    totalPages: 1,
+    totalLoans: 0,
+  },
 };
 
-// Thunks for various actions
 export const getLoanByAadhar = createAsyncThunk(
   'loans/getLoanByAadhar',
   async (aadhaarNumber, {rejectWithValue}) => {
     try {
-      const response = await instance.get('loan/get-loan-by-aadhar', {
-        params: {aadhaarNumber},
-      });
-      if (response.status === 404 && response.data.message) {
-        return rejectWithValue(response.data.message || 'Loan not found');
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        return rejectWithValue('User is not authenticated');
       }
+
+      console.log('called aadha');
+
+      const params = {
+        // page: filters.page || 1,
+        // limit: filters.limit || 10,
+        aadhaarNumber,
+        // ...(filters.startDate && { startDate: filters.startDate }),
+        // ...(filters.endDate && { endDate: filters.endDate }),
+        // ...(filters.status && { status: filters.status }),
+        // ...(filters.minAmount && { minAmount: filters.minAmount }),
+        // ...(filters.maxAmount && { maxAmount: filters.maxAmount }),
+      };
+
+      const response = await instance.get('loan/get-loan-by-aadhar', {params});
+
+      console.log('response', response);
+
+      if (response.status === 404) {
+        return {
+          loans: [],
+          totalAmount: 0,
+          pagination: initialState.pagination,
+        };
+      }
+
       return {
         loans: response.data.data,
-        totalAmount: response.data.totalAmount,
+        totalAmount: response.data.totalAmount || 0,
+        pagination: response.data.pagination || initialState.pagination,
       };
     } catch (error) {
-      console.log(error.response?.data || error.message);
-      return rejectWithValue(
-        error.response?.data || error.message || 'Unknown error',
-      );
+      if (error.response && error.response.data) {
+        return rejectWithValue(error.response.data.message);
+      }
+      return rejectWithValue(error.message || 'Unknown error');
     }
   },
 );
 
 export const getLoanByLender = createAsyncThunk(
   'loans/getLoanByLender',
-  async (_, {rejectWithValue}) => {
+  async (filters = {}, {rejectWithValue}) => {
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
         return rejectWithValue('User is not authenticated');
       }
+
+      const params = {
+        page: filters.page || 1,
+        limit: filters.limit || 10,
+        ...(filters.startDate && {startDate: filters.startDate}),
+        ...(filters.endDate && {endDate: filters.endDate}),
+        ...(filters.status && {status: filters.status}),
+        ...(filters.minAmount && {minAmount: filters.minAmount}),
+        ...(filters.maxAmount && {maxAmount: filters.maxAmount}),
+      };
       const response = await instance.get('loan/get-loan-by-lender', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Cache-Control': 'no-cache',
-        },
+        params,
       });
 
-      if (response.status === 404 && response.data.message) {
-        return rejectWithValue(
-          response.data.message || 'No loans found for this lender',
-        );
+      console.log('response', response);
+
+      if (response.status === 404) {
+        return {
+          lenderLoans: [],
+          lenderTotalAmount: 0,
+          pagination: initialState.pagination,
+        };
       }
 
       return {
         lenderLoans: response.data.data,
-        lenderTotalAmount: response.data.totalAmount,
+        lenderTotalAmount: response.data.totalAmount || 0,
+        pagination: response.data.pagination || initialState.pagination,
       };
     } catch (error) {
+      if (error.response && error.response.data) {
+        return rejectWithValue(error.response.data.message);
+      }
       return rejectWithValue(error.message || 'Unknown error');
     }
   },
@@ -167,48 +212,48 @@ export const getLoanStats = createAsyncThunk(
 
 const loanSlice = createSlice({
   name: 'loans',
-  initialState,
+  initialState: {},
   reducers: {},
   extraReducers: builder => {
     builder
       // Handling getLoanByAadhar
       .addCase(getLoanByAadhar.pending, state => {
         state.loading = true;
-        state.loans = [];
+        state.error = null;
         state.totalAmount = 0;
         state.aadharError = null;
       })
       .addCase(getLoanByAadhar.fulfilled, (state, action) => {
         state.loading = false;
-        state.loans = action.payload.loans;
+        state.loans = action.payload;
         state.totalAmount = action.payload.totalAmount;
-        state.aadharError = null;
+        state.pagination = action.payload.pagination;
       })
       .addCase(getLoanByAadhar.rejected, (state, action) => {
         state.loading = false;
-        state.aadharError =
-          action.payload || action.error?.message || 'Something went wrong';
+        state.error = action.payload || 'Failed to fetch loans';
+        state.loans = [];
+        state.totalAmount = 0;
+        state.pagination = initialState.pagination;
       })
 
       // Handling getLoanByLender
       .addCase(getLoanByLender.pending, state => {
         state.loading = true;
-        state.lenderLoans = [];
-        state.lenderTotalAmount = 0;
         state.error = null;
       })
       .addCase(getLoanByLender.fulfilled, (state, action) => {
         state.loading = false;
         state.lenderLoans = action.payload.lenderLoans;
         state.lenderTotalAmount = action.payload.lenderTotalAmount;
-        state.error = null;
+        state.pagination = action.payload.pagination;
       })
       .addCase(getLoanByLender.rejected, (state, action) => {
         state.loading = false;
-        state.error =
-          action.payload ||
-          action.error?.message ||
-          'Error fetching lender loans';
+        state.error = action.payload || 'Failed to fetch loans';
+        state.lenderLoans = [];
+        state.lenderTotalAmount = 0;
+        state.pagination = initialState.pagination;
       })
 
       // Handling createLoan

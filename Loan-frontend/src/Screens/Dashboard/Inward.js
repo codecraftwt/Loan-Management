@@ -8,8 +8,9 @@ import {
   ActivityIndicator,
   Image,
   RefreshControl,
+  Modal,
 } from 'react-native';
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useMemo} from 'react';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import {useDispatch, useSelector} from 'react-redux';
 import {
@@ -24,6 +25,8 @@ import Toast from 'react-native-toast-message';
 import LoaderSkeleton from '../../Components/LoaderSkeleton';
 import {m} from 'walstar-rn-responsive';
 import Header from '../../Components/Header';
+import DatePicker from 'react-native-date-picker';
+import {Picker} from '@react-native-picker/picker';
 
 export default function Inward({navigation}) {
   const dispatch = useDispatch();
@@ -38,11 +41,56 @@ export default function Inward({navigation}) {
   const [acceptanceStatus, setAcceptanceStatus] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
+  const [startDateFilter, setStartDateFilter] = useState(null);
+  const [endDateFilter, setEndDateFilter] = useState(null);
+  const [minAmount, setMinAmount] = useState('');
+  const [maxAmount, setMaxAmount] = useState('');
+  const [statusFilter, setStatusFilter] = useState(null);
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [currentDateType, setCurrentDateType] = useState('start');
+  const [tempDate, setTempDate] = useState(new Date());
 
   // Filtered loans based on search query
-  const filteredLoans = loans.filter(loan =>
-    loan?.purpose?.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  const filteredLoans = useMemo(() => {
+    return loans?.filter(loan => {
+      const matchesSearch = loan?.purpose
+        ?.toLowerCase()
+        .includes(searchQuery.toLowerCase());
+
+      const matchesStartDate =
+        !startDateFilter ||
+        moment(loan.loanStartDate).isSameOrAfter(
+          moment(startDateFilter),
+          'day',
+        );
+
+      const matchesEndDate =
+        !endDateFilter ||
+        moment(loan.loanEndDate).isSameOrBefore(moment(endDateFilter), 'day');
+
+      const matchesMin = !minAmount || loan.amount >= parseInt(minAmount, 10);
+      const matchesMax = !maxAmount || loan.amount <= parseInt(maxAmount, 10);
+      const matchesStatus = !statusFilter || loan.status === statusFilter;
+
+      return (
+        matchesSearch &&
+        matchesStartDate &&
+        matchesEndDate &&
+        matchesMin &&
+        matchesMax &&
+        matchesStatus
+      );
+    });
+  }, [
+    loans,
+    searchQuery,
+    startDateFilter,
+    endDateFilter,
+    minAmount,
+    maxAmount,
+    statusFilter,
+  ]);
 
   const formatDate = date => moment(date).format('DD-MM-YYYY');
 
@@ -81,6 +129,18 @@ export default function Inward({navigation}) {
     }
   };
 
+  const handleClearFilters = () => {
+    setStartDateFilter(null);
+    setEndDateFilter(null);
+    setMinAmount('');
+    setMaxAmount('');
+    setStatusFilter(null);
+  };
+
+  const handleSubmitFilters = () => {
+    setIsFilterModalVisible(false);
+  };
+
   const handleCancel = () => {
     setSelectedLoan(null);
     setIsPromptVisible(false);
@@ -107,14 +167,138 @@ export default function Inward({navigation}) {
       <Header title="My Taken Loans" />
 
       <View style={styles.searchBarContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search by purpose.."
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholderTextColor="#888"
-        />
+        <View style={{flex: 1, flexDirection: 'row', position: 'relative'}}>
+          <TextInput
+            style={[styles.searchInput, {paddingRight: m(45)}]}
+            placeholder="Search by purpose.."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholderTextColor="#888"
+          />
+          <Icon
+            name="filter-list"
+            size={30}
+            color="#b80266"
+            onPress={() => setIsFilterModalVisible(true)}
+            style={{
+              position: 'absolute',
+              right: m(10),
+              top: '35%',
+              transform: [{translateY: -m(12)}],
+            }}
+          />
+        </View>
       </View>
+
+      <Modal
+        visible={isFilterModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setIsFilterModalVisible(false)}>
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setIsFilterModalVisible(false)}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Filter Loans</Text>
+
+            {/* Date Filters */}
+            <TouchableOpacity
+              onPress={() => {
+                setCurrentDateType('start');
+                setTempDate(startDateFilter || new Date());
+                setDatePickerOpen(true);
+              }}>
+              <View style={styles.dateInput}>
+                <Text>
+                  {startDateFilter
+                    ? formatDate(startDateFilter)
+                    : 'Select Start Date'}
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                setCurrentDateType('end');
+                setTempDate(endDateFilter || new Date());
+                setDatePickerOpen(true);
+              }}>
+              <View style={styles.dateInput}>
+                <Text>
+                  {endDateFilter
+                    ? formatDate(endDateFilter)
+                    : 'Select End Date'}
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Amount Filters */}
+            <TextInput
+              style={styles.input}
+              placeholder="Min Amount"
+              value={minAmount}
+              onChangeText={text => setMinAmount(text.replace(/[^0-9]/g, ''))}
+              keyboardType="numeric"
+              placeholderTextColor="#888"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Max Amount"
+              value={maxAmount}
+              onChangeText={text => setMaxAmount(text.replace(/[^0-9]/g, ''))}
+              keyboardType="numeric"
+              placeholderTextColor="#888"
+            />
+
+            {/* Status Filter */}
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={statusFilter}
+                onValueChange={setStatusFilter}
+                style={styles.picker}>
+                <Picker.Item label="Select Status" value={null} />
+                <Picker.Item label="Pending" value="pending" />
+                <Picker.Item label="Paid" value="paid" />
+              </Picker>
+            </View>
+
+            {/* Modal Buttons */}
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                style={[styles.button, styles.closeButton]}
+                onPress={() => setIsFilterModalVisible(false)}>
+                <Text style={styles.buttonText}>Close</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, styles.clearButton]}
+                onPress={handleClearFilters}>
+                <Text style={styles.buttonText}>Clear</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, styles.submitButton]}
+                onPress={handleSubmitFilters}>
+                <Text style={styles.buttonText}>Submit</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+        <DatePicker
+              modal
+              open={datePickerOpen}
+              date={tempDate}
+              mode="date" // Set mode to "date" to hide the time picker
+              onConfirm={date => {
+                if (currentDateType === 'start') {
+                  setStartDateFilter(date);
+                } else {
+                  setEndDateFilter(date);
+                }
+                setDatePickerOpen(false);
+              }}
+              onCancel={() => setDatePickerOpen(false)}
+            />
 
       {/* List of loans */}
       {loading ? (
@@ -133,10 +317,10 @@ export default function Inward({navigation}) {
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }>
-            {filteredLoans?.length === 0 && loans?.length > 0 ? (
+            {loans?.length === 0 && loans?.length > 0 ? (
               <Text style={styles.emptyText}>No loans found</Text>
             ) : (
-              filteredLoans.map((data, index) => (
+              loans?.map((data, index) => (
                 <TouchableOpacity
                   key={index}
                   onPress={() =>
@@ -273,11 +457,13 @@ const styles = StyleSheet.create({
     borderBottomColor: '#ddd',
   },
   searchBarContainer: {
+    flexDirection: 'row',
     paddingHorizontal: m(15),
     marginTop: m(20),
-    marginBottom: m(10),
+    marginBottom: m(15),
   },
   searchInput: {
+    flex: 1,
     backgroundColor: '#fff',
     borderRadius: m(20),
     paddingHorizontal: m(15),
@@ -386,5 +572,75 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: m(13),
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    width: '80%',
+    maxHeight: '60%',
+  },
+  modalTitle: {
+    fontSize: m(18),
+    fontWeight: 'bold',
+    color: '#b80266',
+    marginBottom: m(20),
+    textAlign: 'center',
+  },
+  dateInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: m(10),
+    padding: m(10),
+    marginBottom: m(10),
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: m(10),
+    padding: m(10),
+    marginBottom: m(10),
+    color: '#000',
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: m(10),
+    marginBottom: m(10),
+    overflow: 'hidden',
+  },
+  picker: {
+    width: '100%',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: m(10),
+  },
+  button: {
+    borderRadius: m(10),
+    paddingVertical: m(10),
+    paddingHorizontal: m(20),
+    minWidth: m(80),
+    alignItems: 'center',
+  },
+  closeButton: {
+    backgroundColor: '#ccc',
+  },
+  clearButton: {
+    backgroundColor: '#b80266',
+  },
+  submitButton: {
+    backgroundColor: '#4CAF50',
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 });
