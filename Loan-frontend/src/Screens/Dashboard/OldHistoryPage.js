@@ -17,7 +17,7 @@ import LoaderSkeleton from '../../Components/LoaderSkeleton';
 import AgreementModal from '../PromptBox/AgreementModal';
 
 const OldHistoryPage = ({route, navigation}) => {
-  const {aadharNo} = route.params;
+  const {aadhaarNumber} = route.params;
   const [expandedLoanIndex, setExpandedLoanIndex] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedLoanAgreement, setSelectedLoanAgreement] = useState(null);
@@ -27,14 +27,14 @@ const OldHistoryPage = ({route, navigation}) => {
   );
 
   useEffect(() => {
-    if (aadharNo) {
+    if (aadhaarNumber) {
       try {
-        dispatch(getLoanByAadhar(aadharNo));
+        dispatch(getLoanByAadhar({aadhaarNumber}));
       } catch (error) {
         console.log(error, 'Error');
       }
     }
-  }, [aadharNo, dispatch]);
+  }, [aadhaarNumber, dispatch]);
 
   const toggleDetails = index => {
     setExpandedLoanIndex(expandedLoanIndex === index ? null : index);
@@ -83,7 +83,7 @@ const OldHistoryPage = ({route, navigation}) => {
 
                 <Text style={styles.detailTextName}>{borrower?.name}</Text>
                 <Text style={styles.aadharHeading}>
-                  Aadhar No: {aadharNo || borrower?.aadhaarNumber}
+                  Aadhar No: {aadhaarNumber || borrower?.aadhaarNumber}
                 </Text>
                 <Text style={styles.detailText}>
                   Mobile: {borrower?.mobileNumber}

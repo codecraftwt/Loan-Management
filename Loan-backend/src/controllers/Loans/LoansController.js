@@ -14,6 +14,16 @@ const AddLoan = async (req, res) => {
     const lenderId = req.user.id;
     const LoanData = req.body;
 
+    const user = await User.findOne({
+      aadharCardNoShubham: LoanData.aadhaarNumber,
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User with the provided Aadhar number does not exist",
+      });
+    }
+
     // Check if the user has an active subscription
     // const activeSubscription = await Subscription.findOne({
     //   user: lenderId,
@@ -414,7 +424,8 @@ const getLoanByAadhaar = async (req, res) => {
 
     // Add filters
     if (startDate) query.loanStartDate = { $gte: new Date(startDate) };
-    if (endDate) query.loanEndDate = { $lte: new Date(endDate) };
+    if (endDate)
+      query.loanEndDate = { ...query.loanEndDate, $lte: new Date(endDate) };
     if (status) query.status = status;
     if (minAmount !== undefined || maxAmount !== undefined) {
       query.amount = {};

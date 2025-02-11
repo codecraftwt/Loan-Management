@@ -137,7 +137,9 @@ const requestPasswordReset = async (req, res) => {
     // Check if the user exists
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res
+        .status(404)
+        .json({ message: "User with this email not found." });
     }
 
     // Generate a 6-digit OTP (One-Time Password)

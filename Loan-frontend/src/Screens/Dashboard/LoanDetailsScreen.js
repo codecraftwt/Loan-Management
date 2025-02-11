@@ -127,11 +127,6 @@ export default function LoanDetailScreen({route, navigation}) {
       value: formatDate(loanDetails.loanEndDate),
       icon: 'calendar',
     },
-    {
-      label: 'Loan Taken From',
-      value: loanDetails?.lenderId?.userName,
-      icon: 'arrow-down-circle',
-    },
     {label: 'Address', value: loanDetails.address, icon: 'map-pin'},
   ];
 

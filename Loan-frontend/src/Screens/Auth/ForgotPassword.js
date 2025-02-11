@@ -57,6 +57,7 @@ export default function ForgotPassword({navigation}) {
         } else {
           const errorMessage =
             response?.payload?.message ||
+            response?.payload ||
             'An error occurred. Please try again.';
 
           Toast.show({

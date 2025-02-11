@@ -22,29 +22,29 @@ const initialState = {
 
 export const getLoanByAadhar = createAsyncThunk(
   'loans/getLoanByAadhar',
-  async (aadhaarNumber, {rejectWithValue}) => {
+  async ({aadhaarNumber, filters = {}}, {rejectWithValue}) => {
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
         return rejectWithValue('User is not authenticated');
       }
 
-      console.log('called aadha');
+      console.log('Aadhar Number', aadhaarNumber);
 
       const params = {
-        // page: filters.page || 1,
-        // limit: filters.limit || 10,
         aadhaarNumber,
-        // ...(filters.startDate && { startDate: filters.startDate }),
-        // ...(filters.endDate && { endDate: filters.endDate }),
-        // ...(filters.status && { status: filters.status }),
-        // ...(filters.minAmount && { minAmount: filters.minAmount }),
-        // ...(filters.maxAmount && { maxAmount: filters.maxAmount }),
+        page: filters.page || 1,
+        limit: filters.limit || 10,
+        ...(filters.startDate && {startDate: filters.startDate}),
+        ...(filters.endDate && {endDate: filters.endDate}),
+        ...(filters.status && {status: filters.status}),
+        ...(filters.minAmount && {minAmount: filters.minAmount}),
+        ...(filters.maxAmount && {maxAmount: filters.maxAmount}),
       };
 
       const response = await instance.get('loan/get-loan-by-aadhar', {params});
 
-      console.log('response', response);
+      console.log('response----=------------>', response);
 
       if (response.status === 404) {
         return {
@@ -225,12 +225,15 @@ const loanSlice = createSlice({
       })
       .addCase(getLoanByAadhar.fulfilled, (state, action) => {
         state.loading = false;
-        state.loans = action.payload;
+        state.loans = action.payload.loans;
         state.totalAmount = action.payload.totalAmount;
         state.pagination = action.payload.pagination;
+        state.aadharError = null;
       })
       .addCase(getLoanByAadhar.rejected, (state, action) => {
         state.loading = false;
+        state.aadharError =
+          action.payload || action.error?.message || 'Something went wrong';
         state.error = action.payload || 'Failed to fetch loans';
         state.loans = [];
         state.totalAmount = 0;
@@ -269,7 +272,10 @@ const loanSlice = createSlice({
       .addCase(createLoan.rejected, (state, action) => {
         state.loading = false;
         state.error =
-          action.payload || action.error?.message || 'Error creating loan';
+          action.payload ||
+          action.error?.message ||
+          action.payload.message ||
+          'Error creating loan';
       })
 
       // Handling updateLoanStatus

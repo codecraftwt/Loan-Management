@@ -31,7 +31,6 @@ export default function AddDetails({route, navigation}) {
   );
   const {loanDetails} = route.params || {};
 
-  // State variables
   const [formData, setFormData] = useState({
     name: loanDetails?.name || '',
     mobileNumber: loanDetails?.mobileNumber || '',
@@ -46,12 +45,6 @@ export default function AddDetails({route, navigation}) {
   const [showOldHistoryButton, setShowOldHistoryButton] = useState(false);
   const [isStartDatePickerVisible, setStartDatePickerVisible] = useState(false);
   const [isEndDatePickerVisible, setEndDatePickerVisible] = useState(false);
-  const [profileImage, setProfileImage] = useState('');
-
-  useEffect(() => {
-    const userProfileImage = loans[0]?.userProfileImage;
-    setProfileImage(userProfileImage);
-  }, [loans, formData.aadhaarNumber]);
 
   // Validate form fields
   const validateForm = () => {
@@ -100,7 +93,6 @@ export default function AddDetails({route, navigation}) {
     const newData = {
       ...formData,
       amount: parseFloat(formData.amount),
-      profileImage,
     };
 
     try {
@@ -121,7 +113,9 @@ export default function AddDetails({route, navigation}) {
         navigation.navigate('BottomNavigation', {screen: 'Outward'});
       } else {
         setErrorMessage(
-          response.payload?.errors?.join(', ') || 'An error occurred.',
+          response.payload?.errors?.join(', ') ||
+            response.payload.message ||
+            'An error occurred.',
         );
       }
     } catch (error) {

@@ -6,6 +6,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Image,
+  Alert,
 } from 'react-native';
 import React, {useState, useEffect} from 'react';
 import Icon from 'react-native-vector-icons/Feather';
@@ -24,8 +25,6 @@ export default function Profile() {
   const user = useSelector(state => state.auth.user);
 
   useFetchUserFromStorage();
-
-  const aadhaarNumber = user?.aadhaarNumber || user?.aadharCardNo;
 
   const [imageError, setImageError] = useState(false);
 
@@ -51,7 +50,7 @@ export default function Profile() {
     try {
       await dispatch(removeUserDeviceToken({}));
 
-      dispatch(logout());
+      await dispatch(logout());
 
       setTimeout(() => {
         setIsPromptVisible(false);
@@ -59,6 +58,7 @@ export default function Profile() {
       }, 200);
     } catch (error) {
       console.error('Error during logout process:', error);
+      Alert.alert('Not able to logout');
     }
   };
 
@@ -120,7 +120,20 @@ export default function Profile() {
               <TouchableOpacity
                 style={styles.option}
                 onPress={() => {
-                  navigation.navigate('OldHistoryPage', {aadhaarNumber});
+                  const aadhaarNumber =
+                    user?.aadhaarNumber || user?.aadharCardNo;
+
+                  if (aadhaarNumber) {
+                    console.log('Aadhar number ----->', aadhaarNumber);
+                    navigation.navigate('OldHistoryPage', {
+                      aadhaarNumber,
+                    });
+                  } else {
+                    Alert.alert(
+                      'Somthing went wrong',
+                      'Aadhaar Number not found, please try again later',
+                    );
+                  }
                 }}>
                 <Icon name="file-text" size={20} color="#333333" />
                 <Text style={styles.optionText}>Loan History</Text>

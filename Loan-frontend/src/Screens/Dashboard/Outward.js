@@ -40,44 +40,9 @@ const Outward = ({navigation}) => {
   const [currentDateType, setCurrentDateType] = useState('start');
   const [tempDate, setTempDate] = useState(new Date());
 
-  
-
-  // const filteredLoans = useMemo(() => {
-  //   return lenderLoans?.filter(loan => {
-  //     const matchesSearch = loan?.name
-  //       ?.toLowerCase()
-  //       .includes(searchQuery.toLowerCase());
-  //     const matchesStartDate =
-  //       !startDateFilter ||
-  //       moment(loan.loanStartDate).isSameOrAfter(
-  //         moment(startDateFilter),
-  //         'day',
-  //       );
-  //     const matchesEndDate =
-  //       !endDateFilter ||
-  //       moment(loan.loanEndDate).isSameOrBefore(moment(endDateFilter), 'day');
-  //     const matchesMin = !minAmount || loan.amount >= parseInt(minAmount, 10);
-  //     const matchesMax = !maxAmount || loan.amount <= parseInt(maxAmount, 10);
-  //     const matchesStatus = !statusFilter || loan.status === statusFilter;
-
-  //     return (
-  //       matchesSearch &&
-  //       matchesStartDate &&
-  //       matchesEndDate &&
-  //       matchesMin &&
-  //       matchesMax &&
-  //       matchesStatus
-  //     );
-  //   });
-  // }, [
-  //   lenderLoans,
-  //   searchQuery,
-  //   startDateFilter,
-  //   endDateFilter,
-  //   minAmount,
-  //   maxAmount,
-  //   statusFilter,
-  // ]);
+  const filteredLoans = lenderLoans?.filter(loan =>
+    loan?.name?.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
   const formatDate = date => moment(date).format('DD-MM-YYYY');
 
   const handleStatusUpdate = useCallback(loan => {
@@ -115,15 +80,18 @@ const Outward = ({navigation}) => {
     setMaxAmount('');
     setStatusFilter(null);
     dispatch(getLoanByLender());
-    setIsFilterModalVisible(false)
-
+    setIsFilterModalVisible(false);
   };
 
-  const handleSubmitFilters = async() => {
-    console.log('Submit')
+  const handleSubmitFilters = async () => {
+    console.log('Submit');
     const filters = {
-      startDate: startDateFilter ? moment(startDateFilter).format('YYYY-MM-DD') : null,
-      endDate: endDateFilter ? moment(endDateFilter).format('YYYY-MM-DD') : null,
+      startDate: startDateFilter
+        ? moment(startDateFilter).format('YYYY-MM-DD')
+        : null,
+      endDate: endDateFilter
+        ? moment(endDateFilter).format('YYYY-MM-DD')
+        : null,
       minAmount: minAmount || null,
       maxAmount: maxAmount || null,
       status: statusFilter || null,
@@ -301,10 +269,10 @@ const Outward = ({navigation}) => {
           refreshControl={
             <RefreshControl refreshing={loading} onRefresh={onRefresh} />
           }>
-          {lenderLoans?.length === 0 && lenderLoans?.length > 0 ? (
+          {filteredLoans?.length === 0 && filteredLoans?.length > 0 ? (
             <Text style={styles.emptyText}>No loans found</Text>
           ) : (
-            lenderLoans?.map((loan, index) => (
+            filteredLoans?.map((loan, index) => (
               <TouchableOpacity
                 key={index}
                 onPress={() =>

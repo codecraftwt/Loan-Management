@@ -51,50 +51,12 @@ export default function Inward({navigation}) {
   const [currentDateType, setCurrentDateType] = useState('start');
   const [tempDate, setTempDate] = useState(new Date());
 
-  // Filtered loans based on search query
-  const filteredLoans = useMemo(() => {
-    return loans?.filter(loan => {
-      const matchesSearch = loan?.purpose
-        ?.toLowerCase()
-        .includes(searchQuery.toLowerCase());
-
-      const matchesStartDate =
-        !startDateFilter ||
-        moment(loan.loanStartDate).isSameOrAfter(
-          moment(startDateFilter),
-          'day',
-        );
-
-      const matchesEndDate =
-        !endDateFilter ||
-        moment(loan.loanEndDate).isSameOrBefore(moment(endDateFilter), 'day');
-
-      const matchesMin = !minAmount || loan.amount >= parseInt(minAmount, 10);
-      const matchesMax = !maxAmount || loan.amount <= parseInt(maxAmount, 10);
-      const matchesStatus = !statusFilter || loan.status === statusFilter;
-
-      return (
-        matchesSearch &&
-        matchesStartDate &&
-        matchesEndDate &&
-        matchesMin &&
-        matchesMax &&
-        matchesStatus
-      );
-    });
-  }, [
-    loans,
-    searchQuery,
-    startDateFilter,
-    endDateFilter,
-    minAmount,
-    maxAmount,
-    statusFilter,
-  ]);
+  const filteredLoans = loans?.filter(loan =>
+    loan?.purpose?.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
 
   const formatDate = date => moment(date).format('DD-MM-YYYY');
 
-  // Show the prompt when updating the status
   const handleStatusChange = (data, status) => {
     setSelectedLoan(data);
     setAcceptanceStatus(status);
@@ -137,8 +99,20 @@ export default function Inward({navigation}) {
     setStatusFilter(null);
   };
 
-  const handleSubmitFilters = () => {
+  const handleSubmitFilters = async () => {
+    const filters = {
+      startDate: startDateFilter
+        ? moment(startDateFilter).format('YYYY-MM-DD')
+        : null,
+      endDate: endDateFilter
+        ? moment(endDateFilter).format('YYYY-MM-DD')
+        : null,
+      minAmount: minAmount || null,
+      maxAmount: maxAmount || null,
+      status: statusFilter || null,
+    };
     setIsFilterModalVisible(false);
+    await dispatch(getLoanByAadhar({aadhaarNumber, filters}));
   };
 
   const handleCancel = () => {
@@ -149,14 +123,14 @@ export default function Inward({navigation}) {
   // Pull-to-refresh logic
   const onRefresh = async () => {
     // setRefreshing(true);
-    await dispatch(getLoanByAadhar(aadhaarNumber));
+    await dispatch(getLoanByAadhar({aadhaarNumber}));
     // setRefreshing(false);
   };
 
   useFocusEffect(
     React.useCallback(() => {
       if (aadhaarNumber) {
-        dispatch(getLoanByAadhar(aadhaarNumber));
+        dispatch(getLoanByAadhar({aadhaarNumber}));
         console.log('API Call Triggered on Screen Focus');
       }
     }, [dispatch, aadhaarNumber]),
@@ -284,21 +258,21 @@ export default function Inward({navigation}) {
           </View>
         </TouchableOpacity>
       </Modal>
-        <DatePicker
-              modal
-              open={datePickerOpen}
-              date={tempDate}
-              mode="date" // Set mode to "date" to hide the time picker
-              onConfirm={date => {
-                if (currentDateType === 'start') {
-                  setStartDateFilter(date);
-                } else {
-                  setEndDateFilter(date);
-                }
-                setDatePickerOpen(false);
-              }}
-              onCancel={() => setDatePickerOpen(false)}
-            />
+      <DatePicker
+        modal
+        open={datePickerOpen}
+        date={tempDate}
+        mode="date" // Set mode to "date" to hide the time picker
+        onConfirm={date => {
+          if (currentDateType === 'start') {
+            setStartDateFilter(date);
+          } else {
+            setEndDateFilter(date);
+          }
+          setDatePickerOpen(false);
+        }}
+        onCancel={() => setDatePickerOpen(false)}
+      />
 
       {/* List of loans */}
       {loading ? (
@@ -317,10 +291,10 @@ export default function Inward({navigation}) {
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }>
-            {loans?.length === 0 && loans?.length > 0 ? (
+            {filteredLoans?.length === 0 && filteredLoans?.length > 0 ? (
               <Text style={styles.emptyText}>No loans found</Text>
             ) : (
-              loans?.map((data, index) => (
+              filteredLoans?.map((data, index) => (
                 <TouchableOpacity
                   key={index}
                   onPress={() =>
@@ -451,11 +425,6 @@ const styles = StyleSheet.create({
     height: m(60),
     borderRadius: m(60),
   },
-  totalAmountContainer: {
-    paddingHorizontal: m(18),
-    marginTop: m(10),
-    borderBottomColor: '#ddd',
-  },
   searchBarContainer: {
     flexDirection: 'row',
     paddingHorizontal: m(15),
@@ -473,6 +442,11 @@ const styles = StyleSheet.create({
     fontSize: m(16),
     color: '#000',
   },
+  totalAmountContainer: {
+    paddingHorizontal: m(18),
+    marginTop: m(10),
+    borderBottomColor: '#ddd',
+  },
   totalAmountText: {
     fontSize: m(16),
     fontWeight: 'bold',
@@ -484,7 +458,6 @@ const styles = StyleSheet.create({
     shadowOffset: {width: 0, height: m(2)},
     shadowOpacity: 0.1,
     shadowRadius: m(5),
-    elevation: m(3),
   },
   loadingText: {
     textAlign: 'center',
