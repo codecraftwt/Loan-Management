@@ -11,6 +11,7 @@ const initialState = {
   loanStats: [],
   loading: true,
   error: null,
+  updateError: null,
   aadharError: null,
   pagination: {
     page: 1,
@@ -153,8 +154,8 @@ export const updateLoanStatus = createAsyncThunk(
       console.log(response.data);
       return response.data;
     } catch (error) {
-      console.log('Fail', error.message);
-      return rejectWithValue(error.message || 'Unknown error');
+      console.log('Fail---------------------------->', error.response.data.error);
+      return rejectWithValue(error.response.data.error || error.message || error || 'Unknown error');
     }
   },
 );
@@ -281,7 +282,7 @@ const loanSlice = createSlice({
       // Handling updateLoanStatus
       .addCase(updateLoanStatus.pending, state => {
         state.loading = true;
-        state.error = null;
+        state.updateError = null;
       })
       .addCase(updateLoanStatus.fulfilled, (state, action) => {
         state.loading = false;
@@ -301,14 +302,14 @@ const loanSlice = createSlice({
           state.lenderLoans[updatedLenderLoanIndex] = updatedLoan;
         }
 
-        state.error = null;
+        state.updateError = null;
       })
       .addCase(updateLoanStatus.rejected, (state, action) => {
-        state.loading = false;
-        state.error =
-          action.payload ||
-          action.error?.message ||
-          'Error updating loan status';
+        state.loading = false;        
+        const errorMessage = action.payload.replace(/^.*loanEndDate:\s*/, '')
+        console.log(errorMessage, "message <--------------")
+        state.updateError =
+        errorMessage.replace(/^.*loanEndDate:\s*/, '') || "Failed to update"
       })
 
       //update updateLoanAcceptanceStatus

@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import moment from 'moment';
-import {useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import {updateLoanStatus} from '../../Redux/Slices/loanSlice'; // Update as per your redux action
 import Toast from 'react-native-toast-message';
 import {m} from 'walstar-rn-responsive';
@@ -44,6 +44,8 @@ const LoanDetailRow = ({label, value, icon, isStatus, onStatusChange}) => (
 export default function LoanDetailScreen({route, navigation}) {
   const {loanDetails, isEdit} = route.params;
   const dispatch = useDispatch();
+
+  const {updateError} = useSelector(state => state.loans);  
 
   const [isPromptVisible, setPromptVisible] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState(null);
@@ -80,7 +82,7 @@ export default function LoanDetailScreen({route, navigation}) {
         Toast.show({
           type: 'error',
           position: 'top',
-          text1: err.message || 'Error updating loan status',
+          text1: updateError || err.message || 'Error updating loan status',
         });
         setPromptVisible(false);
       });

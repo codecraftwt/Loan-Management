@@ -206,7 +206,7 @@ const updateLoanStatus = async (req, res) => {
     console.error("Error updating loan status:", error);
     return res.status(500).json({
       message: "Server error. Please try again later.",
-      error: error.message,
+      error: error.message || error,
     });
   }
 };
