@@ -21,7 +21,9 @@ export default function Register({navigation}) {
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
 
   const [nameError, setNameError] = useState('');
   const [aadharError, setAadharError] = useState('');
@@ -29,6 +31,7 @@ export default function Register({navigation}) {
   const [emailError, setEmailError] = useState('');
   const [addressError, setAddressError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
 
   const dispatch = useDispatch();
 
@@ -84,8 +87,22 @@ export default function Register({navigation}) {
     setPassword(text);
     if (text.length < 6) {
       setPasswordError('Password must be at least 6 characters.');
+    } else if (confirmPassword && text !== confirmPassword) {
+      setConfirmPasswordError('Passwords do not match.');
     } else {
       setPasswordError('');
+      if (confirmPassword && text === confirmPassword) {
+        setConfirmPasswordError('');
+      }
+    }
+  };
+
+  const validateConfirmPassword = text => {
+    setConfirmPassword(text);
+    if (text !== password) {
+      setConfirmPasswordError('Passwords do not match.');
+    } else {
+      setConfirmPasswordError('');
     }
   };
 
@@ -96,7 +113,8 @@ export default function Register({navigation}) {
       mobileNumber.length === 10 &&
       email &&
       address &&
-      password.length >= 6
+      password.length >= 6 &&
+      password === confirmPassword
     );
   };
 
@@ -224,6 +242,29 @@ export default function Register({navigation}) {
         {passwordError ? (
           <Text style={styles.errorText}>{passwordError}</Text>
         ) : null}
+
+        <View style={styles.passwordContainer}>
+          <TextInput
+            style={styles.passwordInput}
+            placeholder="Confirm Password"
+            secureTextEntry={!confirmPasswordVisible}
+            placeholderTextColor="#666666"
+            value={confirmPassword}
+            onChangeText={validateConfirmPassword}
+          />
+          <TouchableOpacity
+            onPress={() => setConfirmPasswordVisible(!confirmPasswordVisible)}>
+            <Ionicons
+              name={confirmPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
+              size={25}
+              color={'#f26fb7'}
+              style={styles.icon}
+            />
+          </TouchableOpacity>
+        </View>
+        {confirmPasswordError ? (
+          <Text style={styles.errorText}>{confirmPasswordError}</Text>
+        ) : null}
       </View>
 
       <TouchableOpacity
@@ -250,14 +291,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   welcomeText: {
-    fontSize: m(28),
+    fontSize: m(22),
     color: '#b80266',
     fontFamily: 'Montserrat-Bold',
     textAlign: 'center',
     marginBottom: m(20),
   },
   headerText: {
-    fontSize: m(22),
+    fontSize: m(18),
     color: '#333',
     fontFamily: 'Montserrat-Bold',
     marginBottom: m(40),
@@ -267,13 +308,13 @@ const styles = StyleSheet.create({
     marginBottom: m(30),
   },
   input: {
-    height: m(60),
+    height: m(50),
     borderColor: '#f26fb7',
     borderWidth: m(1),
     borderRadius: m(8),
     marginBottom: m(15),
     paddingHorizontal: m(16),
-    fontSize: m(16),
+    fontSize: m(14),
     fontFamily: 'Poppins-Regular',
     color: '#333333',
     backgroundColor: '#FFFFFF',
@@ -288,17 +329,18 @@ const styles = StyleSheet.create({
     borderColor: '#f26fb7',
     borderWidth: m(1),
     borderRadius: m(8),
-    height: m(60),
+    height: m(50),
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
     shadowOffset: {width: 0, height: m(2)},
     shadowOpacity: 0.1,
     shadowRadius: m(4),
+    marginBottom: m(15),
   },
   passwordInput: {
     flex: 1,
     paddingHorizontal: m(16),
-    fontSize: m(16),
+    fontSize: m(14),
     fontFamily: 'Poppins-Regular',
     color: '#333333',
   },
@@ -308,14 +350,14 @@ const styles = StyleSheet.create({
   registerButton: {
     backgroundColor: '#b80266',
     borderRadius: m(8),
-    height: m(60),
+    height: m(50),
     justifyContent: 'center',
     alignItems: 'center',
     elevation: m(4),
   },
   registerButtonText: {
     color: '#FFFFFF',
-    fontSize: m(18),
+    fontSize: m(16),
     fontFamily: 'Poppins-Bold',
   },
   linksContainer: {

@@ -136,7 +136,7 @@ export default function LoginScreen({navigation}) {
 
       <View style={styles.linksContainer}>
         {/* Sign in with Google Button */}
-        <TouchableOpacity style={styles.googleButton}>
+        {/* <TouchableOpacity style={styles.googleButton}>
           <Image
             source={{
               uri: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTw7JaI54p1i3v3WAoqEiQE1Jduquut71TkNSKSTNoixuv9DQQGdj61Ex_10nv6NM5wIhY&usqp=CAU',
@@ -144,7 +144,7 @@ export default function LoginScreen({navigation}) {
             style={styles.googleIcon}
           />
           <Text style={styles.googleButtonText}>Sign in with Google</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         <Text
           style={styles.link}
@@ -169,14 +169,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   welcomeText: {
-    fontSize: m(28),
+    fontSize: m(22),
     color: '#b80266',
     fontFamily: 'Montserrat-Bold',
     textAlign: 'center',
     marginBottom: m(18),
   },
   headerText: {
-    fontSize: m(22),
+    fontSize: m(18),
     color: '#333',
     fontFamily: 'Montserrat-Bold',
     marginBottom: m(34),
@@ -186,13 +186,13 @@ const styles = StyleSheet.create({
     marginBottom: m(10),
   },
   input: {
-    height: m(60),
+    height: m(50),
     borderColor: '#f26fb7',
     borderWidth: m(1),
     borderRadius: m(8),
     marginBottom: m(20),
     paddingHorizontal: m(16),
-    fontSize: m(16),
+    fontSize: m(14),
     fontFamily: 'Poppins-Regular',
     color: '#333333',
     backgroundColor: '#FFFFFF',
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     borderColor: '#f26fb7',
     borderWidth: m(1),
     borderRadius: m(8),
-    height: m(55),
+    height: m(50),
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
     shadowOffset: {width: 0, height: m(2)},
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
   passwordInput: {
     flex: 1,
     paddingHorizontal: m(16),
-    fontSize: m(16),
+    fontSize: m(14),
     fontFamily: 'Poppins-Regular',
     color: '#333333',
   },
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   loginButton: {
     backgroundColor: '#b80266',
     borderRadius: m(8),
-    height: m(60),
+    height: m(50),
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: m(10),
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
   },
   loginButtonText: {
     color: '#FFFFFF',
-    fontSize: m(18),
+    fontSize: m(16),
     fontFamily: 'Poppins-Bold',
   },
   linksContainer: {
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
     marginRight: m(20),
   },
   googleButtonText: {
-    fontSize: m(16),
+    fontSize: m(14),
     fontFamily: 'Poppins-SemiBold',
   },
   errorText: {

@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema(
     userName: {
       type: String,
       required: true,
-      // unique: true,
+      unique: true,
     },
     password: {
       type: String,
@@ -27,12 +27,12 @@ const userSchema = new mongoose.Schema(
     aadharCardNo: {
       type: String,
       required: true,
-      match: [/^\d{12}$/, "Please provide a valid 12-digit Aadhar number"],
+      // match: [/^\d{12}$/, "Please provide a valid 12-digit Aadhar number"],
     },
     mobileNo: {
       type: String,
       required: true,
-      match: [/^\d{10}$/, "Please provide a valid 10-digit mobile number"],
+      // match: [/^\d{10}$/, "Please provide a valid 10-digit mobile number"],
     },
     subscription: {
       type: mongoose.Schema.Types.ObjectId,

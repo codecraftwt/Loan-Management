@@ -10,23 +10,32 @@ const signupUser = async (req, res) => {
     req.body;
 
   try {
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(400).json({ message: "User already exists" });
-    }
+    const [userExists, mobileExists, aadharExists, userNameExists] =
+      await Promise.all([
+        User.findOne({ email }),
+        User.findOne({ mobileNo }),
+        User.findOne({ aadharCardNo }),
+        User.findOne({ userName }),
+      ]);
 
-    const mobileExists = await User.findOne({ mobileNo });
+    // Check for existing records and return appropriate messages
+    if (userExists) {
+      return res
+        .status(400)
+        .json({ message: "User with this email already exists" });
+    }
     if (mobileExists) {
       return res
         .status(400)
         .json({ message: "Mobile number is already in use" });
     }
-
-    const aadharExists = await User.findOne({ aadharCardNo });
     if (aadharExists) {
       return res
         .status(400)
         .json({ message: "Aadhar card number is already registered" });
+    }
+    if (userNameExists) {
+      return res.status(400).json({ message: "Username is already taken" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -56,7 +65,7 @@ const signupUser = async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({
-      message: "Server error",
+      message: "Something went wrong",
       error: error.message,
     });
   }
