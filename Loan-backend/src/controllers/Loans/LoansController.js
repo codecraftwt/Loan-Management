@@ -15,7 +15,7 @@ const AddLoan = async (req, res) => {
     const LoanData = req.body;
 
     const user = await User.findOne({
-      aadharCardNoShubham: LoanData.aadhaarNumber,
+      aadharCardNo: LoanData.aadharCardNo,
     });
 
     if (!user) {
@@ -40,16 +40,15 @@ const AddLoan = async (req, res) => {
     const createLoan = new Loan({
       ...LoanData,
       lenderId,
+      aadhaarNumber: LoanData.aadharCardNo,
     });
 
-    // Generate loan agreement
     const agreementText = generateLoanAgreement(createLoan, req.user);
     createLoan.agreement = agreementText;
 
-    // Save the loan with the generated agreement
     await createLoan.save();
 
-    await sendLoanUpdateNotification(LoanData.aadhaarNumber, LoanData);
+    await sendLoanUpdateNotification(LoanData.aadharCardNo, LoanData);
 
     return res.status(201).json(createLoan);
   } catch (error) {
@@ -57,9 +56,9 @@ const AddLoan = async (req, res) => {
       const errorMessages = Object.values(error.errors).map(
         (err) => err.message
       );
-      return res.status(400).json({
+      return res.status.status(400).json({
         message: "Validation error",
-        errors: errorMessages, // Return an array of error messages
+        errors: errorMessages,
       });
     }
 
