@@ -129,7 +129,7 @@ const Outward = ({navigation}) => {
             placeholderTextColor="#888"
           />
           <Icon
-            name="filter-list"
+            name="adjust"
             size={30}
             color="#b80266"
             onPress={() => setIsFilterModalVisible(true)}

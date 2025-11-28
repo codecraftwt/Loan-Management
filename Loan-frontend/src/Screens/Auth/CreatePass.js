@@ -6,6 +6,7 @@ import {
   TextInput,
   TouchableOpacity,
   StatusBar,
+  Platform,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -64,7 +65,7 @@ export default function CreatePass({navigation, route}) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle="dark-content" {...(Platform.OS === 'android' && {backgroundColor: '#fff'})} />
       <Text style={styles.headerText}>Create New Password</Text>
       <Text style={styles.instructionText}>
         Please enter a new password below.

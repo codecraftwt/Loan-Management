@@ -1,24 +1,13 @@
 import messaging from '@react-native-firebase/messaging';
-import PushNotification from 'react-native-push-notification';
 
-// Create a Set to keep track of shown notifications
-const shownNotifications = new Set();
+// NOTE:
+// react-native-push-notification is not fully compatible with React Native 0.77
+// and is the source of the "new NativeEventEmitter() requires a non-null argument"
+// crash on iOS. To keep the app running, we ONLY use Firebase Messaging here
+// and avoid any NativeEventEmitter usage from that library.
 
-// Initialize Firebase and handle push notifications
+// Initialize Firebase Messaging and handle push notifications (log-only)
 export const setupFirebaseNotifications = () => {
-  // Create a notification channel (needed for Android 8.0+)
-  PushNotification.createChannel(
-    {
-      channelId: 'default-channel-id',
-      channelName: 'Default Channel',
-      channelDescription: 'Notifications for Loan App',
-      soundName: 'default',
-      importance: PushNotification.Importance.HIGH,
-      vibrate: true,
-    },
-    created => console.log(`Create channel returned '${created}'`),
-  );
-
   // Request permission for notifications
   messaging()
     .requestPermission()
@@ -28,6 +17,8 @@ export const setupFirebaseNotifications = () => {
         authStatus === messaging.AuthorizationStatus.PROVISIONAL;
       if (enabled) {
         console.log('Notification permission granted:', authStatus);
+      } else {
+        console.log('Notification permission NOT granted:', authStatus);
       }
     })
     .catch(error => console.log('Notification permission error:', error));
@@ -36,12 +27,12 @@ export const setupFirebaseNotifications = () => {
   messaging().onNotificationOpenedApp(remoteMessage => {
     console.log(
       'Notification caused app to open from background state:',
-      remoteMessage.notification,
+      remoteMessage?.notification,
     );
 
-    if (remoteMessage.data && remoteMessage.data.screen) {
+    if (remoteMessage?.data && remoteMessage.data.screen) {
       // navigation.navigate(remoteMessage.data.screen); // Navigate to the screen
-      console.log('Navigating to screen');
+      console.log('Navigating to screen from background notification');
     }
   });
 
@@ -56,38 +47,21 @@ export const setupFirebaseNotifications = () => {
         );
       }
 
-      if (remoteMessage.data && remoteMessage.data.screen) {
+      if (remoteMessage?.data && remoteMessage.data.screen) {
         // navigation.navigate(remoteMessage.data.screen); // Navigate to the screen
-        console.log('Navigating to screen when application is closed');
+        console.log('Navigating to screen from quit-state notification');
       }
-    });
+    })
+    .catch(error =>
+      console.log('Error getting initial notification:', error),
+    );
 
-  // Handle foreground notifications
+  // Handle foreground notifications (just log them for now)
   messaging().onMessage(async remoteMessage => {
     console.log(
       'Foreground notification received:',
       remoteMessage.notification,
+      remoteMessage.data,
     );
-
-    console.log('Unique ID', remoteMessage.data.notificationId);
-
-    // Show local notifications in the foreground
-    const {title, body} = remoteMessage.notification;
-    const notificationId = remoteMessage.data.notificationId;
-
-    // Prevent showing duplicate notifications
-    if (!shownNotifications.has(notificationId)) {
-      shownNotifications.add(notificationId); // Add notification ID to the set
-      PushNotification.localNotification({
-        channelId: 'default-channel-id',
-        title: title,
-        message: body,
-        smallIcon: 'ic_notification',
-        playSound: true,
-        soundName: 'default',
-      });
-    } else {
-      console.log('Duplicate notification ignored:', notificationId);
-    }
   });
 };

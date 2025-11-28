@@ -1,6 +1,6 @@
 // Header.js
 import React from 'react';
-import {View, Text, Image, StyleSheet, StatusBar} from 'react-native';
+import {View, Text, Image, StyleSheet, StatusBar, Platform} from 'react-native';
 import {m} from 'walstar-rn-responsive';
 import {logo} from '../Assets';
 import colors from '../constants/colors';
@@ -8,7 +8,7 @@ import colors from '../constants/colors';
 const Header = ({title}) => {
   return (
     <>
-      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
+      <StatusBar barStyle="light-content" {...(Platform.OS === 'android' && {backgroundColor: colors.primary})} />
 
       <View style={styles.headerBar}>
         <Text style={styles.headerText}>{title}</Text>

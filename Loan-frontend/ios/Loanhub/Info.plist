@@ -58,6 +58,12 @@
 		<string>Rubik-Bold.ttf</string>
 		<string>Rubik-Regular.ttf</string>
 		<string>Rubik-SemiBold.ttf</string>
+		<string>Feather.ttf</string>
+		<string>Ionicons.ttf</string>
+		<string>MaterialIcons.ttf</string>
+		<string>MaterialCommunityIcons.ttf</string>
+		<string>FontAwesome.ttf</string>
+		<string>FontAwesome5.ttf</string>
 	</array>
 </dict>
 </plist>
