@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "Loanhub.app"
-               BlueprintName = "Loanhub"
-               ReferencedContainer = "container:Loanhub.xcodeproj">
+               BuildableName = "Loan_Management.app"
+               BlueprintName = "Loan_Management"
+               ReferencedContainer = "container:Loan_Management.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "LoanhubTests.xctest"
-               BlueprintName = "LoanhubTests"
-               ReferencedContainer = "container:Loanhub.xcodeproj">
+               BuildableName = "Loan_ManagementTests.xctest"
+               BlueprintName = "Loan_ManagementTests"
+               ReferencedContainer = "container:Loan_Management.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -55,9 +55,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "Loanhub.app"
-            BlueprintName = "Loanhub"
-            ReferencedContainer = "container:Loanhub.xcodeproj">
+            BuildableName = "Loan_Management.app"
+            BlueprintName = "Loan_Management"
+            ReferencedContainer = "container:Loan_Management.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -72,9 +72,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "Loanhub.app"
-            BlueprintName = "Loanhub"
-            ReferencedContainer = "container:Loanhub.xcodeproj">
+            BuildableName = "Loan_Management.app"
+            BlueprintName = "Loan_Management"
+            ReferencedContainer = "container:Loan_Management.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
