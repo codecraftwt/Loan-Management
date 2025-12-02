@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   StatusBar,
   Alert,
+  Platform,
 } from 'react-native';
 import {useDispatch} from 'react-redux';
 import {verifyOtp} from '../../Redux/Slices/authslice';
@@ -81,7 +82,7 @@ export default function OTP({navigation, route}) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle="dark-content" {...(Platform.OS === 'android' && {backgroundColor: '#fff'})} />
       <Text style={styles.headerText}>Enter OTP</Text>
       <Text style={styles.instructionText}>
         We sent a 6-digit code to your email address.

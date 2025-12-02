@@ -6,11 +6,16 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
-  Alert,
   Image,
   ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
+import LinearGradient from 'react-native-linear-gradient';
+import Toast from 'react-native-toast-message';
+import {launchImageLibrary, launchCamera} from 'react-native-image-picker';
+import {useDispatch, useSelector} from 'react-redux';
+import {m} from 'walstar-rn-responsive';
+import Header from '../../Components/Header';
 import PromptBox from '../PromptBox/Prompt';
 import {
   deleteProfileImage,
@@ -19,22 +24,9 @@ import {
   updateUser,
   updateUserProfile,
 } from '../../Redux/Slices/authslice';
-import {useDispatch, useSelector} from 'react-redux';
 import useFetchUserFromStorage from '../../Redux/hooks/useFetchUserFromStorage';
-import Toast from 'react-native-toast-message';
-import {launchImageLibrary, launchCamera} from 'react-native-image-picker';
-import {m} from 'walstar-rn-responsive';
 
-// Helper function to display Toast messages
-const showToast = (type, message) => {
-  Toast.show({
-    type,
-    position: 'top',
-    text1: message,
-  });
-};
-
-const ProfileDetails = ({route, navigation}) => {
+const ProfileDetails = ({navigation}) => {
   const dispatch = useDispatch();
   const profileData = useSelector(state => state.auth.user);
   const isLoading = useSelector(state => state.auth.loading);
@@ -54,210 +46,164 @@ const ProfileDetails = ({route, navigation}) => {
     address: profileData?.address,
   });
 
-  const toggleEditMode = () => setIsEditing(prevState => !prevState);
+  const toggleEditMode = () => setIsEditing(prev => !prev);
 
+  // Profile Image Functions
   const handleProfileImage = action => {
     const options =
       action === 'camera'
-        ? {
-            mediaType: 'photo',
-            cameraType: 'front',
-            quality: 1,
-            saveToPhotos: true,
-          }
+        ? {mediaType: 'photo', cameraType: 'front', quality: 1, saveToPhotos: true}
         : {mediaType: 'photo', quality: 1};
+
     const launch = action === 'camera' ? launchCamera : launchImageLibrary;
-    launch(options, response => handleImageResponse(response));
+    launch(options, response => {
+      if (response.didCancel || response.errorCode)
+        return Toast.show({type: 'error', text1: 'Cancelled or Error'});
+      handleImageUpload(response.assets[0]);
+    });
   };
 
-  const handleImageResponse = async response => {
-    if (response.didCancel || response.errorCode)
-      return showToast(
-        'error',
-        response.errorMessage || 'Something went wrong.',
-      );
+  const handleImageUpload = async asset => {
     try {
       setLoading(true);
-      const {uri, type, fileName} = response.assets[0];
+      const {uri, type, fileName} = asset;
       const formData = new FormData();
-      formData.append('profileImage', {
-        uri,
-        type,
-        name: fileName || 'profile_image.jpg',
-      });
+      formData.append('profileImage', {uri, type, name: fileName || 'profile.jpg'});
       await dispatch(updateUserProfile(formData)).unwrap();
       setLoading(false);
-      showToast('success', 'Profile Image Updated Successfully');
-    } catch (error) {
+      Toast.show({type: 'success', text1: 'Profile Updated Successfully'});
+    } catch (err) {
       setLoading(false);
-      showToast('error', error.message || 'Profile Update Failed');
+      Toast.show({type: 'error', text1: 'Profile Update Failed'});
     }
   };
 
   const handleLogout = () => setIsPromptVisible(true);
-
   const handleConfirmLogout = async () => {
-    try {
-      await dispatch(removeUserDeviceToken({}));
-      dispatch(logout());
-      setTimeout(() => {
-        setIsPromptVisible(false);
-        navigation.replace('Login');
-      }, 200);
-    } catch (error) {
-      console.error('Error during logout process:', error);
-    }
+    await dispatch(removeUserDeviceToken());
+    dispatch(logout());
+    navigation.replace('Login');
   };
 
   const handleDeleteProfileImage = () => setIsDeleteImagePromptVisible(true);
-
   const handleConfirmDeleteImage = async () => {
     try {
       await dispatch(deleteProfileImage()).unwrap();
-      showToast('success', 'Profile image deleted successfully');
+      Toast.show({type: 'success', text1: 'Profile Image Deleted'});
       setIsDeleteImagePromptVisible(false);
-    } catch (error) {
-      showToast('error', error?.message || 'Failed to delete profile image');
+    } catch (err) {
+      Toast.show({type: 'error', text1: 'Delete Failed'});
       setIsDeleteImagePromptVisible(false);
     }
   };
 
   const handleSaveChanges = async () => {
     try {
-      const response = await dispatch(updateUser(editedData)).unwrap();
+      await dispatch(updateUser(editedData)).unwrap();
       setIsEditing(false);
-      showToast('success', response.messsage || 'Profile Edited Successfully');
-    } catch (error) {
-      showToast('error', error?.message || 'Profile Edit Failed');
+      Toast.show({type: 'success', text1: 'Profile Updated'});
+    } catch (err) {
+      Toast.show({type: 'error', text1: 'Update Failed'});
     }
   };
 
-  const renderProfileField = (
-    iconName,
-    label,
-    value,
-    isEditable = false,
-    fieldKey,
-  ) => (
-    <View style={styles.row}>
-      <Icon name={iconName} size={28} color="#b80266" style={styles.icon} />
-      <View style={styles.dataContainer}>
-        <Text style={styles.detailLabel}>{label}</Text>
-        {isEditable ? (
+  const handleCancel = () => {
+    navigation.goBack();
+  };
+
+  const renderField = (icon, label, value, editable = false, keyName) => (
+    <View style={styles.fieldRow}>
+      <Icon name={icon} size={22} color="#ff6700" />
+      <View style={{flex: 1, marginLeft: m(10)}}>
+        <Text style={styles.fieldLabel}>{label}</Text>
+        {editable ? (
           <TextInput
-            style={styles.input}
-            value={editedData[fieldKey]}
-            onChangeText={text =>
-              setEditedData({...editedData, [fieldKey]: text})
-            }
+            style={styles.fieldInput}
+            value={editedData[keyName]}
+            onChangeText={text => setEditedData({...editedData, [keyName]: text})}
           />
         ) : (
-          <Text style={styles.detailText}>{value}</Text>
+          <Text style={styles.fieldValue}>{value || '-'}</Text>
         )}
       </View>
     </View>
   );
 
   return (
-    <>
-      <View style={styles.headerBar}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}>
-          <Icon name="arrow-left" size={24} color="#FFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerText}>Personal Details</Text>
-        <TouchableOpacity onPress={toggleEditMode} style={styles.editIcon}>
-          <Icon name="edit" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-      </View>
+    <View style={{flex: 1, backgroundColor: '#f9f9f9'}}>
+      <Header
+        title="Profile Details"
+        showBackButton
+        isEdit={true}
+        onEditPress={toggleEditMode}
+      />
 
-      <ScrollView style={styles.container}>
-        <View style={styles.profileInfo}>
-          <TouchableOpacity onPress={() => handleProfileImage('gallery')}>
-            <View style={styles.profileImageContainer}>
-              {profileData?.profileImage ? (
-                <Image
-                  source={{uri: profileData.profileImage}}
-                  style={styles.profileImage}
-                />
-              ) : (
-                <Icon name="user" size={50} color="#b80266" />
-              )}
-            </View>
-          </TouchableOpacity>
-          <Text style={styles.detailTextName}>{profileData?.userName}</Text>
+      <ScrollView contentContainerStyle={{padding: m(20)}}>
+        {/* Profile Card */}
+        <LinearGradient
+          colors={['#fff', '#fff']}
+          style={styles.profileCard}>
+          <View style={styles.imageContainer}>
+            {profileData?.profileImage ? (
+              <Image
+                source={{uri: profileData.profileImage}}
+                style={styles.profileImage}
+              />
+            ) : (
+              <Icon name="user" size={60} color="#ff6700" />
+            )}
 
-          {profileData?.profileImage && (
+            {/* Camera Icon Overlay */}
             <TouchableOpacity
-              style={styles.deleteImageButton}
-              onPress={handleDeleteProfileImage}>
-              <Icon name="trash" size={24} color="#fff" />
+              style={styles.cameraBtn}
+              onPress={() => handleProfileImage('gallery')}
+            >
+              <LinearGradient
+                colors={['#ff6700', '#ff9100']}
+                style={styles.cameraIconBg}
+              >
+                <Icon name="camera" size={20} color="#fff" />
+              </LinearGradient>
             </TouchableOpacity>
-          )}
+
+            {/* Delete Image */}
+            {profileData?.profileImage && (
+              <TouchableOpacity
+                style={styles.deleteImageBtn}
+                onPress={handleDeleteProfileImage}
+              >
+                <Icon name="trash" size={20} color="#fff" />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <Text style={styles.userName}>{profileData?.userName}</Text>
+        </LinearGradient>
+
+        {loading && <ActivityIndicator size="large" color="#ff6700" style={{marginTop: m(20)}} />}
+
+        {/* Profile Fields */}
+        <View style={{marginTop: m(20)}}>
+          {renderField('user', 'Name', profileData?.userName, isEditing, 'userName')}
+          {renderField('phone', 'Phone', profileData?.mobileNo, isEditing, 'mobileNo')}
+          {renderField('message-square', 'Email', profileData?.email, isEditing, 'email')}
+          {renderField('map-pin', 'Address', profileData?.address, isEditing, 'address')}
         </View>
 
-        {(isLoading || loading) && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#b80266" />
-          </View>
-        )}
-
-        {renderProfileField(
-          'user',
-          'Name',
-          profileData?.userName,
-          isEditing,
-          'userName',
-        )}
-        <View style={styles.hrLine} />
-        {renderProfileField(
-          'phone',
-          'Phone',
-          profileData?.mobileNo,
-          isEditing,
-          'mobileNo',
-        )}
-        <View style={styles.hrLine} />
-        {renderProfileField(
-          'message-square',
-          'Email',
-          profileData?.email,
-          isEditing,
-          'email',
-        )}
-        <View style={styles.hrLine} />
-        {renderProfileField(
-          'credit-card',
-          'Aadhar Card No',
-          profileData?.aadharCardNo,
-        )}
-        <View style={styles.hrLine} />
-        {renderProfileField(
-          'map-pin',
-          'Address',
-          profileData?.address,
-          isEditing,
-          'address',
-        )}
-        <View style={styles.hrLine} />
-
         {isEditing && (
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={handleSaveChanges}>
-            <Text style={styles.editButtonText}>Save</Text>
+          <TouchableOpacity style={styles.saveBtn} onPress={handleSaveChanges}>
+            <Text style={styles.saveBtnText}>Save Changes</Text>
           </TouchableOpacity>
         )}
 
-        <TouchableOpacity
-          style={[styles.option, styles.bottomLogout]}
-          onPress={handleLogout}>
-          <Icon name="log-out" size={28} color="#b80266" />
-          <Text style={styles.optionText}>Logout</Text>
+        {/* Cancel Button */}
+        <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel}>
+          <Icon name="x" size={22} color="#ff6700" />
+          <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
       </ScrollView>
 
+      {/* Prompt Boxes */}
       <PromptBox
         visible={isPromptVisible}
         message="Are you sure you want to logout?"
@@ -270,166 +216,131 @@ const ProfileDetails = ({route, navigation}) => {
         onConfirm={handleConfirmDeleteImage}
         onCancel={() => setIsDeleteImagePromptVisible(false)}
       />
-    </>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: m(20),
-    backgroundColor: '#f5f5f5',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  profileCard: {
     alignItems: 'center',
-    height: m(100),
-  },
-  profileInfo: {
-    alignItems: 'center',
-    marginBottom: m(20),
-    backgroundColor: '#b80266',
     paddingVertical: m(20),
-    paddingHorizontal: m(25),
     borderRadius: m(16),
+    backgroundColor: '#fff',
     shadowColor: '#000',
     shadowOffset: {width: 0, height: m(4)},
     shadowOpacity: 0.1,
-    shadowRadius: m(10),
-    elevation: m(5),
-    marginHorizontal: m(16),
+    shadowRadius: m(8),
+    elevation: 5,
   },
-  profileImageContainer: {
-    marginBottom: m(10),
-    borderRadius: m(50),
-    overflow: 'hidden',
-    width: m(100),
-    height: m(100),
+  imageContainer: {
+    width: m(110),
+    height: m(110),
+    borderRadius: m(55),
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#fff',
-    borderWidth: m(2),
-    borderColor: '#fff',
     position: 'relative',
+    borderColor: 'lightgrey',
+    borderWidth: 1
   },
   profileImage: {
-    width: m(100),
-    height: m(100),
-    borderRadius: m(50),
+    width: m(110),
+    height: m(110),
+    borderRadius: m(55),
   },
-  profileIcon: {
-    backgroundColor: '#FFA36C',
-    padding: m(15),
-    borderRadius: m(40),
-  },
-  deleteImageButton: {
+  cameraBtn: {
     position: 'absolute',
-    top: m(6),
-    right: m(6),
-    backgroundColor: '#b80266',
-    borderRadius: m(15),
-    padding: m(5),
-  },
-  editIcon: {
-    position: 'absolute',
-    right: m(20),
-    top: m(30),
-  },
-  input: {
-    height: m(40),
-    flex: 1,
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: m(8),
-    paddingHorizontal: m(15),
-    marginTop: m(5),
-  },
-  editButton: {
-    paddingVertical: m(10),
-    backgroundColor: '#b80266',
-    borderRadius: m(8),
-    alignItems: 'center',
-  },
-  editButtonText: {
-    fontSize: m(18),
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  option: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: m(10),
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  optionText: {
-    fontSize: m(16),
-    fontWeight: '700',
-    color: '#b80266',
-    marginLeft: m(18),
-  },
-  hrLine: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-    marginBottom: m(10),
-  },
-  headerBar: {
-    backgroundColor: '#b80266',
-    height: m(70),
-    flexDirection: 'row',
+    bottom: 0,
+    right: 0,
+    width: m(35),
+    height: m(35),
+    borderRadius: m(17.5),
+    overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: m(10),
-    borderBottomEndRadius: m(30),
-    borderBottomStartRadius: m(30),
-    elevation: m(5),
+    borderWidth: 1,
+    borderColor: '#fff',
   },
-  backButton: {
+  cameraIconBg: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    height: '100%',
+    borderRadius: m(17.5),
+  },
+  deleteImageBtn: {
     position: 'absolute',
-    left: m(15),
-    top: m(15),
-    padding: m(10),
+    top: 5,
+    right: 5,
+    backgroundColor: '#ff6700',
+    padding: 6,
+    borderRadius: 20,
   },
-  headerText: {
-    color: '#FFFFFF',
+  userName: {
     fontSize: m(20),
-    fontFamily: 'Montserrat-Bold',
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: m(10),
   },
-  detailTextName: {
-    fontSize: m(20),
-    fontFamily: 'Poppins-Bold',
-    color: 'white',
-    textAlign: 'center',
-  },
-  detailLabel: {
-    fontSize: m(16),
-    fontWeight: '700',
-    fontFamily: 'Poppins-Regular',
-    color: 'black',
-  },
-  detailText: {
-    fontSize: m(16),
-    fontFamily: 'Poppins-Regular',
-    color: '#333333',
-    paddingBlock: m(3),
-  },
-  row: {
+  fieldRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: m(5),
-    width: '100%',
+    marginBottom: m(15),
+    backgroundColor: '#fff',
+    padding: m(12),
+    borderRadius: m(12),
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: m(2)},
+    shadowOpacity: 0.05,
+    shadowRadius: m(4),
+    elevation: 2,
   },
-  icon: {
-    marginRight: m(10),
-    marginBottom: m(8),
+  fieldLabel: {
+    fontSize: m(14),
+    color: '#777',
   },
-  dataContainer: {
-    marginLeft: m(10),
-    width: '86%',
+  fieldValue: {
+    fontSize: m(16),
+    fontWeight: '500',
+    color: '#333',
+    marginTop: 3,
   },
-  bottomLogout: {
-    marginBottom: m(40),
+  fieldInput: {
+    fontSize: m(16),
+    borderBottomWidth: 1,
+    borderBottomColor: '#ff6700',
+    color: '#333',
+    paddingVertical: 2,
+    marginTop: 3,
+  },
+  saveBtn: {
+    backgroundColor: '#ff6700',
+    paddingVertical: m(12),
+    borderRadius: m(12),
+    alignItems: 'center',
+    marginTop: m(20),
+  },
+  saveBtnText: {
+    color: '#fff',
+    fontSize: m(16),
+    fontWeight: 'bold',
+  },
+  cancelBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderColor: '#ff6700',
+    borderWidth: 1,
+    paddingVertical: m(10),
+    borderRadius: m(12),
+    marginTop: m(30),
+  },
+  cancelText: {
+    color: '#ff6700',
+    fontSize: m(16),
+    fontWeight: 'bold',
+    marginLeft: m(8),
   },
 });
 

@@ -1,8 +1,10 @@
 import {StyleSheet, View} from 'react-native';
 import React from 'react';
 import Feather from 'react-native-vector-icons/Feather';
-
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {m} from 'walstar-rn-responsive';
+
 import Home from '../Screens/Dashboard/Home';
 import Profile from '../Screens/Dashboard/Profile';
 import Outward from '../Screens/Dashboard/Outward';
@@ -11,6 +13,21 @@ import Inward from '../Screens/Dashboard/Inward';
 export default function BottomNavigation() {
   const Tab = createBottomTabNavigator();
 
+  // Get safe area values
+  const insets = useSafeAreaInsets();
+
+  const renderIcon = (name, color, size, focused) => {
+    return (
+      <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
+        <Feather
+          name={name}
+          size={focused ? size + 2 : size}
+          color={focused ? '#ffffff' : color}
+        />
+      </View>
+    );
+  };
+
   return (
     <View style={{flex: 1}}>
       <Tab.Navigator
@@ -18,62 +35,70 @@ export default function BottomNavigation() {
         screenOptions={{
           headerShown: false,
           tabBarHideOnKeyboard: true,
-          tabBarActiveTintColor: '#b80266',
+          tabBarActiveTintColor: '#ff6700',
           tabBarInactiveTintColor: '#666666',
           tabBarLabelStyle: {
-            fontSize: 13,
-            fontWeight: '600',
+            fontSize: m(11),
             fontFamily: 'Poppins-SemiBold',
           },
           tabBarStyle: {
-            backgroundColor: '#FFF3E9',
-            paddingBottom: 5,
-            height: 60,
+            position: 'absolute',
+            left: m(16),
+            right: m(16),
+            bottom: insets.bottom + m(2), // <-- Safe area applied here
+            height: m(68),
+            backgroundColor: '#e5dad1',
             borderTopWidth: 0,
-            elevation: 10,
-            shadowColor: '#b80266',
-            shadowOpacity: 0.25,
-            shadowRadius: 4,
-            shadowOffset: {width: 0, height: 2},
+            paddingTop: m(5),
+            paddingBottom: insets.bottom > 0 ? m(5) : 0, // Extra padding if needed
           },
         }}>
         <Tab.Screen
           name="Home"
           component={Home}
           options={{
-            tabBarIcon: ({color, size}) => (
-              <Feather name="home" size={size} color={color} />
-            ),
+            tabBarIcon: ({color, size, focused}) =>
+              renderIcon('home', color, size, focused),
           }}
         />
         <Tab.Screen
-          name="Outward"
+          name="Given"
           component={Outward}
           options={{
-            tabBarIcon: ({color, size}) => (
-              <Feather name="arrow-up-circle" size={size} color={color} />
-            ),
+            tabBarIcon: ({color, size, focused}) =>
+              renderIcon('arrow-up-circle', color, size, focused),
           }}
         />
         <Tab.Screen
-          name="Inward"
+          name="Taken"
           component={Inward}
           options={{
-            tabBarIcon: ({color, size}) => (
-              <Feather name="arrow-down-circle" size={size} color={color} />
-            ),
+            tabBarIcon: ({color, size, focused}) =>
+              renderIcon('arrow-down-circle', color, size, focused),
           }}
         />
         <Tab.Screen
           name="Profile"
           component={Profile}
           options={{
-            tabBarIcon: ({color, size}) => (
-              <Feather name="user" size={size} color={color} />
-            ),
+            tabBarIcon: ({color, size, focused}) =>
+              renderIcon('user', color, size, focused),
           }}
         />
       </Tab.Navigator>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  iconWrapper: {
+    width: m(34),
+    height: m(34),
+    borderRadius: m(17),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  iconWrapperActive: {
+    backgroundColor: '#ff6700',
+  },
+});

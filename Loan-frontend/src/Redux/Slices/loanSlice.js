@@ -124,6 +124,10 @@ export const createLoan = createAsyncThunk(
         return rejectWithValue('User is not authenticated');
       }
 
+      // Debug: Log the exact data being sent to API
+      console.log('createLoan - Data being sent to backend:', JSON.stringify(loanData, null, 2));
+      console.log('createLoan - Aadhar Card No:', loanData.aadharCardNo);
+
       const response = await instance.post('loan/add-loan', loanData, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -133,7 +137,9 @@ export const createLoan = createAsyncThunk(
       return response.data;
     } catch (error) {
       if (error.response) {
-        console.error('API Error:', error.response.data);
+        console.error('API Error Response:', error.response.data);
+        console.error('API Error Status:', error.response.status);
+        console.error('API Error Headers:', error.response.headers);
         return rejectWithValue(error.response.data || 'Failed to create loan');
       }
       console.error('Error:', error.message);

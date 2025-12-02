@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useMemo, useCallback} from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   StyleSheet,
   Text,
@@ -13,21 +13,21 @@ import {
   Image,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import {useDispatch, useSelector} from 'react-redux';
-import {getLoanByLender, updateLoanStatus} from '../../Redux/Slices/loanSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { getLoanByLender, updateLoanStatus } from '../../Redux/Slices/loanSlice';
 import moment from 'moment';
 import DatePicker from 'react-native-date-picker';
 import PromptBox from '../PromptBox/Prompt';
 import Toast from 'react-native-toast-message';
 import LoaderSkeleton from '../../Components/LoaderSkeleton';
-import {m} from 'walstar-rn-responsive';
+import { m } from 'walstar-rn-responsive';
 import Header from '../../Components/Header';
-import {Picker} from '@react-native-picker/picker';
+import { Picker } from '@react-native-picker/picker';
 
-const Outward = ({navigation}) => {
+const Outward = ({ navigation }) => {
   const dispatch = useDispatch();
   const [searchQuery, setSearchQuery] = useState('');
-  const {lenderLoans, loading, error} = useSelector(state => state.loans);
+  const { lenderLoans, loading, error } = useSelector(state => state.loans);
   const [isPromptVisible, setIsPromptVisible] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState(null);
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
@@ -45,17 +45,12 @@ const Outward = ({navigation}) => {
   );
   const formatDate = date => moment(date).format('DD-MM-YYYY');
 
-  const handleStatusUpdate = useCallback(loan => {
-    setSelectedLoan(loan);
-    setIsPromptVisible(true);
-  }, []);
-
   const handleConfirm = useCallback(async () => {
     const newStatus = selectedLoan?.status === 'pending' ? 'paid' : 'pending';
     try {
       setIsPromptVisible(false);
       await dispatch(
-        updateLoanStatus({loanId: selectedLoan._id, status: newStatus}),
+        updateLoanStatus({ loanId: selectedLoan._id, status: newStatus }),
       ).unwrap();
       Toast.show({
         type: 'success',
@@ -84,7 +79,6 @@ const Outward = ({navigation}) => {
   };
 
   const handleSubmitFilters = async () => {
-    console.log('Submit');
     const filters = {
       startDate: startDateFilter
         ? moment(startDateFilter).format('YYYY-MM-DD')
@@ -119,36 +113,32 @@ const Outward = ({navigation}) => {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <Header title="My Given Loans" />
 
-      <View style={styles.searchBarContainer}>
-        <View style={{flex: 1, flexDirection: 'row', position: 'relative'}}>
+      {/* Search and Filter Section */}
+      <View style={styles.searchSection}>
+        <View style={styles.searchContainer}>
+          <Icon name="search" size={20} color="#6B7280" style={styles.searchIcon} />
           <TextInput
-            style={[styles.searchInput, {paddingRight: m(45)}]}
-            placeholder="Search by Name..."
+            style={styles.searchInput}
+            placeholder="Search by name..."
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholderTextColor="#888"
+            placeholderTextColor="#9CA3AF"
           />
-          <Icon
-            name="filter-list"
-            size={30}
-            color="#b80266"
-            onPress={() => setIsFilterModalVisible(true)}
-            style={{
-              position: 'absolute',
-              right: m(10),
-              top: '45%',
-              transform: [{translateY: -m(12)}],
-            }}
-          />
+          <TouchableOpacity
+            style={styles.filterButton}
+            onPress={() => setIsFilterModalVisible(true)}>
+            <Icon name="filter-alt" size={22} color="black" />
+          </TouchableOpacity>
         </View>
 
         <TouchableOpacity
-          style={styles.plusButton}
+          style={styles.addButton}
           onPress={() => navigation.navigate('AddDetails')}>
-          <Text style={styles.plusButtonText}>+</Text>
+          <Icon name="add" size={28} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
 
+      {/* Filter Modal */}
       <Modal
         visible={isFilterModalVisible}
         transparent={true}
@@ -159,85 +149,117 @@ const Outward = ({navigation}) => {
           activeOpacity={1}
           onPress={() => setIsFilterModalVisible(false)}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Filter Loans</Text>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Filter Loans</Text>
+              <TouchableOpacity onPress={() => setIsFilterModalVisible(false)}>
+                <Icon name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
 
             {/* Date Filters */}
-            <TouchableOpacity
-              onPress={() => {
-                setCurrentDateType('start');
-                setTempDate(startDateFilter || new Date());
-                setDatePickerOpen(true);
-              }}>
-              <View style={styles.dateInput}>
-                <Text>
-                  {startDateFilter
-                    ? formatDate(startDateFilter)
-                    : 'Select Start Date'}
-                </Text>
-              </View>
-            </TouchableOpacity>
+            <View style={styles.dateFilterContainer}>
+              <Text style={styles.filterLabel}>Date Range</Text>
+              <View style={styles.dateRow}>
+                <TouchableOpacity
+                  style={styles.dateInput}
+                  onPress={() => {
+                    setCurrentDateType('start');
+                    setTempDate(startDateFilter || new Date());
+                    setDatePickerOpen(true);
+                  }}>
+                  <Icon name="calendar-today" size={18} color="#6B7280" />
+                  <Text style={styles.dateText}>
+                    {startDateFilter
+                      ? formatDate(startDateFilter)
+                      : 'Start Date'}
+                  </Text>
+                </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => {
-                setCurrentDateType('end');
-                setTempDate(endDateFilter || new Date());
-                setDatePickerOpen(true);
-              }}>
-              <View style={styles.dateInput}>
-                <Text>
-                  {endDateFilter
-                    ? formatDate(endDateFilter)
-                    : 'Select End Date'}
-                </Text>
+                <TouchableOpacity
+                  style={styles.dateInput}
+                  onPress={() => {
+                    setCurrentDateType('end');
+                    setTempDate(endDateFilter || new Date());
+                    setDatePickerOpen(true);
+                  }}>
+                  <Icon name="calendar-today" size={18} color="#6B7280" />
+                  <Text style={styles.dateText}>
+                    {endDateFilter
+                      ? formatDate(endDateFilter)
+                      : 'End Date'}
+                  </Text>
+                </TouchableOpacity>
               </View>
-            </TouchableOpacity>
+            </View>
 
             {/* Amount Filters */}
-            <TextInput
-              style={styles.input}
-              placeholder="Min Amount"
-              value={minAmount}
-              onChangeText={text => setMinAmount(text.replace(/[^0-9]/g, ''))}
-              keyboardType="numeric"
-              placeholderTextColor="#888"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Max Amount"
-              value={maxAmount}
-              onChangeText={text => setMaxAmount(text.replace(/[^0-9]/g, ''))}
-              keyboardType="numeric"
-              placeholderTextColor="#888"
-            />
+            <View style={styles.amountFilterContainer}>
+              <Text style={styles.filterLabel}>Amount Range</Text>
+              <View style={styles.amountRow}>
+                <View style={styles.amountInputContainer}>
+                  <Text style={styles.amountPrefix}>₹</Text>
+                  <TextInput
+                    style={[styles.input, styles.amountInput]}
+                    placeholder="Min"
+                    value={minAmount}
+                    onChangeText={text => setMinAmount(text.replace(/[^0-9]/g, ''))}
+                    keyboardType="numeric"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                </View>
+                <Text style={styles.amountSeparator}>-</Text>
+                <View style={styles.amountInputContainer}>
+                  <Text style={styles.amountPrefix}>₹</Text>
+                  <TextInput
+                    style={[styles.input, styles.amountInput]}
+                    placeholder="Max"
+                    value={maxAmount}
+                    onChangeText={text => setMaxAmount(text.replace(/[^0-9]/g, ''))}
+                    keyboardType="numeric"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                </View>
+              </View>
+            </View>
 
             {/* Status Filter */}
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={statusFilter}
-                onValueChange={setStatusFilter}
-                style={styles.picker}>
-                <Picker.Item label="Select Status" value={null} />
-                <Picker.Item label="Pending" value="pending" />
-                <Picker.Item label="Paid" value="paid" />
-              </Picker>
+            <View style={styles.statusFilterContainer}>
+              <Text style={styles.filterLabel}>Status</Text>
+              <View style={styles.statusButtons}>
+                {['all', 'pending', 'paid'].map(status => (
+                  <TouchableOpacity
+                    key={status}
+                    style={[
+                      styles.statusButton,
+                      statusFilter === status || (status === 'all' && !statusFilter)
+                        ? styles.statusButtonActive
+                        : styles.statusButtonInactive,
+                    ]}
+                    onPress={() => setStatusFilter(status === 'all' ? null : status)}>
+                    <Text style={[
+                      styles.statusButtonText,
+                      statusFilter === status || (status === 'all' && !statusFilter)
+                        ? styles.statusButtonTextActive
+                        : styles.statusButtonTextInactive,
+                    ]}>
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
 
             {/* Modal Buttons */}
-            <View style={styles.buttonRow}>
-              {/* <TouchableOpacity
-                style={[styles.button, styles.closeButton]}
-                onPress={() => setIsFilterModalVisible(false)}>
-                <Text style={styles.buttonText}>Close</Text>
-              </TouchableOpacity> */}
+            <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={[styles.button, styles.clearButton]}
+                style={[styles.modalButton, styles.clearButton]}
                 onPress={handleClearFilters}>
-                <Text style={styles.buttonText}>Clear</Text>
+                <Text style={styles.clearButtonText}>Clear All</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.button, styles.submitButton]}
+                style={[styles.modalButton, styles.applyButton]}
                 onPress={handleSubmitFilters}>
-                <Text style={styles.buttonText}>Submit</Text>
+                <Text style={styles.applyButtonText}>Apply Filters</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -249,7 +271,7 @@ const Outward = ({navigation}) => {
         modal
         open={datePickerOpen}
         date={tempDate}
-        mode="date" // Set mode to "date" to hide the time picker
+        mode="date"
         onConfirm={date => {
           if (currentDateType === 'start') {
             setStartDateFilter(date);
@@ -261,16 +283,25 @@ const Outward = ({navigation}) => {
         onCancel={() => setDatePickerOpen(false)}
       />
 
+      {/* Loan List */}
       {loading ? (
         <LoaderSkeleton />
       ) : (
         <ScrollView
-          style={styles.nameListContainer}
+          style={styles.loanListContainer}
+          contentContainerStyle={styles.scrollContent}
           refreshControl={
             <RefreshControl refreshing={loading} onRefresh={onRefresh} />
-          }>
-          {filteredLoans?.length === 0 && filteredLoans?.length > 0 ? (
-            <Text style={styles.emptyText}>No loans found</Text>
+          }
+          showsVerticalScrollIndicator={false}>
+          {filteredLoans?.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Icon name="inventory" size={60} color="#E5E7EB" />
+              <Text style={styles.emptyTitle}>No loans found</Text>
+              <Text style={styles.emptySubtitle}>
+                {searchQuery ? 'Try a different search term' : 'Start by adding a new loan'}
+              </Text>
+            </View>
           ) : (
             filteredLoans?.map((loan, index) => (
               <TouchableOpacity
@@ -280,71 +311,89 @@ const Outward = ({navigation}) => {
                     loanDetails: loan,
                     isEdit: true,
                   })
-                }>
-                <View style={styles.dataCard}>
-                  <View style={styles.dataContainer}>
-                    {loan?.profileImage ? (
-                      <Image
-                        source={{uri: loan?.profileImage}}
-                        style={styles.userImage}
-                      />
-                    ) : (
-                      <Icon
-                        name="account-circle"
-                        size={40}
-                        color="#b80266"
-                        style={styles.userIcon}
-                      />
-                    )}
-                    <View style={styles.textContainer}>
-                      <Text style={styles.dataLabel}>
-                        Full Name:{' '}
-                        <Text style={styles.dataText}>{loan.name}</Text>
-                      </Text>
-                      <Text style={styles.dataLabel}>
-                        Loan Amount:{' '}
-                        <Text style={styles.dataText}>{loan.amount} Rs</Text>
-                      </Text>
-                      <Text style={styles.dataLabel}>
-                        Status:{' '}
-                        <Text
-                          style={[
-                            styles.dataText,
-                            loan.status === 'paid'
-                              ? styles.paidStatus
-                              : styles.pendingStatus,
-                          ]}>
-                          {loan.status}
+                }
+                activeOpacity={0.9}>
+                <View style={styles.loanCard}>
+                  {/* Card Header */}
+                  <View style={styles.cardHeader}>
+                    <View style={styles.userInfo}>
+                      {loan?.profileImage ? (
+                        <Image
+                          source={{ uri: loan?.profileImage }}
+                          style={styles.userAvatar}
+                        />
+                      ) : (
+                        <View style={styles.avatarPlaceholder}>
+                          <Text style={styles.avatarText}>
+                            {loan?.name?.charAt(0)?.toUpperCase() || 'U'}
+                          </Text>
+                        </View>
+                      )}
+                      <View style={styles.userDetails}>
+                        <Text style={styles.userName} numberOfLines={1}>
+                          {loan.name}
                         </Text>
+                        {/* <Text style={styles.loanId}>
+                          ID: {loan._id?.slice(-8) || 'N/A'}
+                        </Text> */}
+                      </View>
+                    </View>
+                    <View style={styles.amountContainer}>
+                      <Text style={styles.amountText}>
+                        ₹{loan.amount?.toLocaleString('en-IN')}
                       </Text>
+                      <Text style={styles.amountLabel}>Loan Amount</Text>
+                    </View>
+                  </View>
 
-                      <Text style={styles.dataLabel}>
-                        Loan End Date:{' '}
-                        <Text style={styles.dataText}>
-                          {formatDate(loan.loanEndDate)}
-                        </Text>
+                  {/* Loan Details */}
+                  <View style={styles.loanDetails}>
+                    <View style={styles.detailItem}>
+                      <Icon name="calendar-today" size={16} color="#6B7280" />
+                      <Text style={styles.detailLabel}>Start Date</Text>
+                      <Text style={styles.detailValue}>
+                        {loan.loanStartDate ? formatDate(loan.loanStartDate) : 'N/A'}
                       </Text>
                     </View>
-                    {/* {loan?.status === 'pending' && (
-                      <TouchableOpacity
-                        style={styles.statusUpdateButton}
-                        onPress={() => handleStatusUpdate(loan)}>
-                        <Icon
-                          name={
-                            loan.status === 'paid'
-                              ? 'check-circle'
-                              : 'access-time'
-                          }
-                          size={20}
-                          color="#fff"
-                        />
-                        <Text style={styles.statusUpdateText}>
-                          {loan.status === 'paid'
-                            ? 'Mark as Pending'
-                            : 'Mark as Paid'}
-                        </Text>
-                      </TouchableOpacity>
-                    )} */}
+                    <View style={styles.detailItem}>
+                      <Icon name="event" size={16} color="#6B7280" />
+                      <Text style={styles.detailLabel}>Due Date</Text>
+                      <Text style={styles.detailValue}>
+                        {formatDate(loan.loanEndDate)}
+                      </Text>
+                    </View>
+                    <View style={styles.detailItem}>
+                      <Icon name="phone" size={16} color="#6B7280" />
+                      <Text style={styles.detailLabel}>Contact</Text>
+                      <Text style={styles.detailValue}>
+                        {loan.mobileNumber || 'N/A'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Card Footer with Status */}
+                  <View style={styles.cardFooter}>
+                    <View style={styles.footerLeft}>
+                      <Icon name="access-time" size={16} color="#6B7280" />
+                      <Text style={styles.timeText}>
+                        Added {moment(loan.createdAt).fromNow()}
+                      </Text>
+                    </View>
+                    <View style={[
+                      styles.statusBadge,
+                      loan.status === 'paid'
+                        ? styles.statusPaid
+                        : styles.statusPending
+                    ]}>
+                      <Icon
+                        name={loan.status === 'paid' ? 'check-circle' : 'pending'}
+                        size={14}
+                        color="#FFFFFF"
+                      />
+                      <Text style={styles.statusText}>
+                        {loan.status?.charAt(0).toUpperCase() + loan.status?.slice(1)}
+                      </Text>
+                    </View>
                   </View>
                 </View>
               </TouchableOpacity>
@@ -355,9 +404,7 @@ const Outward = ({navigation}) => {
 
       <PromptBox
         visible={isPromptVisible}
-        message={`Are you sure you want to change the status to ${
-          selectedLoan?.status === 'pending' ? 'paid' : 'pending'
-        }?`}
+        message={`Are you sure you want to change the status to ${selectedLoan?.status === 'pending' ? 'paid' : 'pending'}?`}
         onConfirm={handleConfirm}
         onCancel={handleCancel}
       />
@@ -368,190 +415,355 @@ const Outward = ({navigation}) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F9FAFB',
   },
-  textContainer: {
-    flexDirection: 'column',
-    marginTop: m(10),
-  },
-  plusButton: {
-    backgroundColor: '#fff',
-    borderRadius: m(20),
-    width: m(38),
-    height: m(38),
-    justifyContent: 'center',
-    alignItems: 'center',
-    // elevation: m(2),
-    marginLeft: m(10),
-    top: m(3),
-    borderWidth: m(0.1),
-  },
-  plusButtonText: {
-    fontSize: m(28),
-    fontWeight: 'bold',
-    color: '#b80266',
-  },
-  nameListContainer: {
-    marginBlock: m(10),
-    marginBottom: m(20),
-    paddingHorizontal: m(15),
-  },
-  emptyText: {
-    textAlign: 'center',
-    fontSize: m(16),
-    color: '#888',
-    marginTop: m(50),
-  },
-  dataCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: m(18),
-    padding: m(10),
-    marginBottom: m(10),
-    borderWidth: 1,
-    borderColor: '#ddd',
+  // Search Section
+  searchSection: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    paddingHorizontal: m(16),
+    paddingVertical: m(12),
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
-  dataContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: m(6),
+  searchContainer: {
     flex: 1,
-  },
-  userIcon: {
-    marginHorizontal: m(10),
-    marginLeft: m(20),
-  },
-  userImage: {
-    width: m(60),
-    height: m(60),
-    borderRadius: m(60),
-    marginLeft: m(10),
-  },
-  dataLabel: {
-    fontSize: m(14),
-    fontWeight: '600',
-    color: '#555',
-    marginBottom: m(3),
-    marginLeft: m(20),
-  },
-  dataText: {
-    fontSize: m(14),
-    color: '#333',
-  },
-  searchBarContainer: {
     flexDirection: 'row',
-    paddingHorizontal: m(15),
-    marginTop: m(20),
-    marginBottom: m(15),
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    borderRadius: m(12),
+    paddingHorizontal: m(12),
+    marginRight: m(12),
+  },
+  searchIcon: {
+    marginRight: m(8),
   },
   searchInput: {
     flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: m(20),
-    paddingHorizontal: m(15),
-    height: m(50),
-    borderWidth: 1,
-    borderColor: '#ddd',
+    height: m(44),
     fontSize: m(16),
-    color: '#000',
+    color: '#374151',
   },
-  loader: {
-    marginTop: m(20),
+  filterButton: {
+    padding: m(8),
+  },
+  addButton: {
+    width: m(44),
+    height: m(44),
+    borderRadius: m(12),
+    backgroundColor: 'black',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  statusUpdateButton: {
-    marginLeft: m(10),
-    marginRight: m(5),
-    backgroundColor: '#b80266',
-    padding: m(6),
-    borderRadius: m(5),
+
+  // Filter Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: m(20),
+    borderTopRightRadius: m(20),
+    padding: m(24),
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: m(24),
+  },
+  modalTitle: {
+    fontSize: m(20),
+    fontWeight: '600',
+    color: '#111827',
+  },
+  filterLabel: {
+    fontSize: m(14),
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: m(8),
+  },
+  dateFilterContainer: {
+    marginBottom: m(20),
+  },
+  dateRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  dateInput: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: m(10),
+    padding: m(12),
+    marginRight: m(8),
+  },
+  dateText: {
+    marginLeft: m(8),
+    fontSize: m(14),
+    color: '#374151',
+  },
+  amountFilterContainer: {
+    marginBottom: m(20),
+  },
+  amountRow: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  statusUpdateText: {
-    fontSize: m(11),
-    color: '#fff',
+  amountInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: m(10),
+  },
+  amountPrefix: {
+    paddingHorizontal: m(12),
+    fontSize: m(14),
+    color: '#6B7280',
+  },
+  amountInput: {
+    flex: 1,
+    borderWidth: 0,
+    paddingLeft: 0,
+  },
+  amountSeparator: {
+    marginHorizontal: m(8),
+    fontSize: m(16),
+    color: '#6B7280',
+  },
+  statusFilterContainer: {
+    marginBottom: m(24),
+  },
+  statusButtons: {
+    flexDirection: 'row',
+  },
+  statusButton: {
+    flex: 1,
+    paddingVertical: m(10),
+    paddingHorizontal: m(12),
+    borderRadius: m(8),
+    marginRight: m(8),
+    alignItems: 'center',
+  },
+  statusButtonActive: {
+    backgroundColor: 'black',
+  },
+  statusButtonInactive: {
+    backgroundColor: '#F3F4F6',
+  },
+  statusButtonText: {
+    fontSize: m(14),
+    fontWeight: '500',
+  },
+  statusButtonTextActive: {
+    color: '#FFFFFF',
+  },
+  statusButtonTextInactive: {
+    color: '#6B7280',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: m(14),
+    borderRadius: m(12),
+    alignItems: 'center',
+  },
+  clearButton: {
+    backgroundColor: '#F3F4F6',
+    marginRight: m(8),
+  },
+  applyButton: {
+    backgroundColor: 'black',
+    marginLeft: m(8),
+  },
+  clearButtonText: {
+    color: '#6B7280',
+    fontSize: m(16),
+    fontWeight: '600',
+  },
+  applyButtonText: {
+    color: '#FFFFFF',
+    fontSize: m(16),
     fontWeight: '600',
   },
 
-  paidStatus: {
-    color: 'green',
+  // Loan List
+  loanListContainer: {
+    padding: m(16),
+    // paddingBottom: m(360),
   },
-  pendingStatus: {
-    color: 'red',
+   scrollContent: {
+    // paddingHorizontal: m(16),
+    paddingTop: m(8),
+    paddingBottom: m(100),
   },
-  filterIcon: {},
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
-    justifyContent: 'center',
+  emptyState: {
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: m(60),
   },
-  modalContent: {
-    backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 10,
-    width: '80%',
-    maxHeight: '80%',
-  },
-  modalTitle: {
+  emptyTitle: {
     fontSize: m(18),
-    fontWeight: 'bold',
-    color: '#b80266',
-    marginBottom: m(20),
+    fontWeight: '600',
+    color: '#6B7280',
+    marginTop: m(12),
+    marginBottom: m(4),
+  },
+  emptySubtitle: {
+    fontSize: m(14),
+    color: '#9CA3AF',
     textAlign: 'center',
   },
-  dateInput: {
+
+  // Loan Card
+  loanCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: m(16),
+    padding: m(16),
+    marginBottom: m(12),
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: m(10),
-    padding: m(10),
-    marginBottom: m(10),
+    borderColor: '#E5E7EB',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: m(10),
-    padding: m(10),
-    marginBottom: m(10),
-    color: '#000',
-  },
-  pickerContainer: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: m(10),
-    marginBottom: m(10),
-    overflow: 'hidden',
-  },
-  picker: {
-    width: '100%',
-  },
-  buttonRow: {
+  cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: m(10),
+    alignItems: 'flex-start',
+    marginBottom: m(16),
   },
-  button: {
-    borderRadius: m(10),
-    paddingVertical: m(10),
-    paddingHorizontal: m(20),
-    minWidth: m(80),
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  userAvatar: {
+    width: m(48),
+    height: m(48),
+    borderRadius: m(24),
+    marginRight: m(12),
+  },
+  avatarPlaceholder: {
+    width: m(46),
+    height: m(46),
+    borderRadius: m(24),
+    backgroundColor: 'black',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: m(12),
+  },
+  avatarText: {
+    fontSize: m(18),
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  userDetails: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: m(17),
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: m(2),
+  },
+  loanId: {
+    fontSize: m(12),
+    color: '#6B7280',
+  },
+  amountContainer: {
+    alignItems: 'flex-end',
+  },
+  amountText: {
+    fontSize: m(20),
+    fontWeight: '700',
+    color: '#111827',
+  },
+  amountLabel: {
+    fontSize: m(12),
+    color: '#6B7280',
+    marginTop: m(2),
+  },
+  loanDetails: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: m(12),
+    padding: m(12),
+    marginBottom: m(16),
+  },
+  detailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: m(8),
+  },
+  detailLabel: {
+    fontSize: m(12),
+    color: '#6B7280',
+    marginLeft: m(8),
+    marginRight: m(4),
+    width: m(60),
+  },
+  detailValue: {
+    fontSize: m(14),
+    fontWeight: '500',
+    color: '#374151',
+    flex: 1,
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: m(12),
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  footerLeft: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  closeButton: {
-    backgroundColor: '#ccc',
+  timeText: {
+    fontSize: m(12),
+    color: '#6B7280',
+    marginLeft: m(4),
   },
-  clearButton: {
-    backgroundColor: '#b80266',
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: m(12),
+    paddingVertical: m(6),
+    borderRadius: m(20),
   },
-  submitButton: {
-    backgroundColor: '#4CAF50',
+  statusPaid: {
+    backgroundColor: '#10B981',
   },
-  buttonText: {
-    color: 'white',
-    fontWeight: 'bold',
+  statusPending: {
+    backgroundColor: '#F59E0B',
+  },
+  statusText: {
+    fontSize: m(12),
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginLeft: m(4),
+  },
+
+  // Input Styles
+  input: {
+    fontSize: m(14),
+    color: '#374151',
+    height: m(44),
   },
 });
 

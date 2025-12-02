@@ -8,34 +8,31 @@ import {
   Image,
   Alert,
 } from 'react-native';
-import React, {useState, useEffect} from 'react';
+import React, { useState } from 'react';
 import Icon from 'react-native-vector-icons/Feather';
-import {useNavigation} from '@react-navigation/native';
-import {useDispatch, useSelector} from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
+import { useDispatch, useSelector } from 'react-redux';
 import PromptBox from '../PromptBox/Prompt';
-import {logout, removeUserDeviceToken} from '../../Redux/Slices/authslice';
+import { logout, removeUserDeviceToken } from '../../Redux/Slices/authslice';
 import useFetchUserFromStorage from '../../Redux/hooks/useFetchUserFromStorage';
-import {m} from 'walstar-rn-responsive';
+import { m } from 'walstar-rn-responsive';
 import Header from '../../Components/Header';
 
 export default function Profile() {
   const navigation = useNavigation();
   const dispatch = useDispatch();
-
   const user = useSelector(state => state.auth.user);
-
   useFetchUserFromStorage();
 
   const [imageError, setImageError] = useState(false);
+  const [isPromptVisible, setIsPromptVisible] = useState(false);
 
   const handleImageError = () => {
     setImageError(true);
   };
 
-  const [isPromptVisible, setIsPromptVisible] = useState(false);
-
   const navigateToProfileDetails = () => {
-    navigation.navigate('ProfileDetails', {profileData: user});
+    navigation.navigate('ProfileDetails', { profileData: user });
   };
 
   const navigateToSettings = () => {
@@ -49,9 +46,7 @@ export default function Profile() {
   const handleConfirmLogout = async () => {
     try {
       await dispatch(removeUserDeviceToken({}));
-
       await dispatch(logout());
-
       setTimeout(() => {
         setIsPromptVisible(false);
         navigation.replace('Login');
@@ -64,98 +59,149 @@ export default function Profile() {
 
   const handleCancelLogout = () => {
     setIsPromptVisible(false);
-    console.log('Canceled logout');
   };
+
+  const menuItems = [
+    {
+      icon: 'user',
+      label: 'Personal Details',
+      onPress: navigateToProfileDetails,
+      color: '#3B82F6',
+    },
+    {
+      icon: 'file-text',
+      label: 'Loan History',
+      onPress: () => {
+        const aadhaarNumber = user?.aadhaarNumber || user?.aadharCardNo;
+        if (aadhaarNumber) {
+          navigation.navigate('OldHistoryPage', { aadhaarNumber });
+        } else {
+          Alert.alert(
+            'Something went wrong',
+            'Aadhaar Number not found, please try again later',
+          );
+        }
+      },
+      // onPress: () => { },
+      color: '#10B981',
+    },
+    {
+      icon: 'help-circle',
+      label: 'Help & Support',
+      onPress: () => navigation.navigate('HelpAndSupportScreen'),
+      color: '#8B5CF6',
+    },
+    {
+      icon: 'shield',
+      label: 'Privacy & Security',
+      onPress: () => { },
+      color: '#EF4444',
+    },
+    {
+      icon: 'credit-card',
+      label: 'Payment Methods',
+      onPress: () => { },
+      color: '#8B5CF6',
+    },
+  ];
 
   return (
     <>
       <View style={styles.container}>
-        {/* Header */}
         <Header title="Profile" />
 
-        <ScrollView>
-          {/* Profile Information */}
-          <View style={styles.profileInfo}>
-            {imageError || !user?.profileImage ? (
-              <Icon
-                name="user"
-                size={60}
-                color="#b80266"
-                style={styles.profileIcon}
-              />
-            ) : (
-              <Image
-                source={{uri: user?.profileImage}}
-                style={styles.profileImage}
-                onError={handleImageError}
-              />
-            )}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}>
 
-            {user ? (
-              <>
-                <Text style={styles.profileName}>{user?.userName}</Text>
-                <Text style={styles.profileEmail}>{user?.email}</Text>
-              </>
-            ) : (
-              <ActivityIndicator size="small" color="#b80266" />
-            )}
-          </View>
+          {/* Profile Card */}
+          <View style={styles.profileCard}>
+            <View style={styles.profileHeader}>
+              {imageError || !user?.profileImage ? (
+                <View style={styles.profileAvatar}>
+                  <Text style={styles.avatarText}>
+                    {user?.userName?.charAt(0)?.toUpperCase() || 'U'}
+                  </Text>
+                </View>
+              ) : (
+                <Image
+                  source={{ uri: user?.profileImage }}
+                  style={styles.profileImage}
+                  onError={handleImageError}
+                />
+              )}
 
-          <View style={styles.profileContent}>
-            <View style={styles.optionsContainer}>
-              {/* <TouchableOpacity
-                style={styles.option}
-                onPress={navigateToSettings}>
-                <Icon name="settings" size={20} color="#333333" />
-                <Text style={styles.optionText}>Settings</Text>
-              </TouchableOpacity> */}
-
-              <TouchableOpacity
-                style={styles.option}
-                onPress={navigateToProfileDetails}>
-                <Icon name="user" size={20} color="#333333" />
-                <Text style={styles.optionText}>Personal Details</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.option}
-                onPress={() => {
-                  const aadhaarNumber =
-                    user?.aadhaarNumber || user?.aadharCardNo;
-
-                  if (aadhaarNumber) {
-                    console.log('Aadhar number ----->', aadhaarNumber);
-                    navigation.navigate('OldHistoryPage', {
-                      aadhaarNumber,
-                    });
-                  } else {
-                    Alert.alert(
-                      'Somthing went wrong',
-                      'Aadhaar Number not found, please try again later',
-                    );
-                  }
-                }}>
-                <Icon name="file-text" size={20} color="#333333" />
-                <Text style={styles.optionText}>Loan History</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.option}>
-                <Icon name="bell" size={20} color="#333333" />
-                <Text style={styles.optionText}>Notifications</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.option}
-                onPress={() => {
-                  navigation.navigate('HelpAndSupportScreen');
-                }}>
-                <Icon name="help-circle" size={20} color="#333333" />
-                <Text style={styles.optionText}>Help & Support</Text>
-              </TouchableOpacity>
+              <View style={styles.profileInfo}>
+                {user ? (
+                  <>
+                    <Text style={styles.profileName} numberOfLines={2}>
+                      {user?.userName}
+                    </Text>
+                    <Text style={styles.profileEmail} numberOfLines={2}>
+                      {user?.email}
+                    </Text>
+                    <View style={styles.verifiedBadge}>
+                      <Icon name="check-circle" size={14} color="#10B981" />
+                      <Text style={styles.verifiedText}>Verified Account</Text>
+                    </View>
+                  </>
+                ) : (
+                  <ActivityIndicator size="small" color="#3B82F6" />
+                )}
+              </View>
             </View>
           </View>
 
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          {/* Menu Section */}
+          <View style={styles.menuSection}>
+            <Text style={styles.sectionTitle}>Account</Text>
+
+            <View style={styles.menuGrid}>
+              {menuItems.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.menuItem}
+                  onPress={item.onPress}
+                  activeOpacity={0.7}>
+                  <View style={[styles.menuIconContainer, { backgroundColor: `${item.color}15` }]}>
+                    <Icon name={item.icon} size={22} color={item.color} />
+                  </View>
+                  <Text style={styles.menuLabel}>{item.label}</Text>
+                  <Icon name="chevron-right" size={18} color="#9CA3AF" />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* App Info */}
+          <View style={styles.appInfoCard}>
+            <View style={styles.appInfoHeader}>
+              <Icon name="info" size={20} color="#6B7280" />
+              <Text style={styles.appInfoTitle}>App Information</Text>
+            </View>
+
+            <View style={styles.appInfoRow}>
+              <Text style={styles.appInfoLabel}>Version</Text>
+              <Text style={styles.appInfoValue}>1.0.0</Text>
+            </View>
+
+            <View style={styles.appInfoRow}>
+              <Text style={styles.appInfoLabel}>Build Number</Text>
+              <Text style={styles.appInfoValue}>1001</Text>
+            </View>
+
+            <View style={styles.appInfoRow}>
+              <Text style={styles.appInfoLabel}>Last Updated</Text>
+              <Text style={styles.appInfoValue}>Dec 2024</Text>
+            </View>
+          </View>
+
+          {/* Logout Button */}
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={handleLogout}>
+            <Icon name="log-out" size={20} color="#EF4444" />
             <Text style={styles.logoutButtonText}>Logout</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -174,73 +220,181 @@ export default function Profile() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F9FAFB',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: m(16),
+    paddingBottom: m(100),
+  },
+
+  // Profile Card
+  profileCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: m(20),
+    padding: m(20),
+    marginBottom: m(20),
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+  },
+  profileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: m(20),
+  },
+  profileAvatar: {
+    width: m(70),
+    height: m(70),
+    borderRadius: m(35),
+    backgroundColor: 'black',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: m(16),
+  },
+  avatarText: {
+    fontSize: m(28),
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   profileImage: {
-    width: m(100),
-    height: m(100),
-    borderRadius: m(50),
-    borderColor: '#dbd9d9',
-    borderWidth: 1,
-  },
-  profileContent: {
-    flexGrow: 1,
-    paddingBottom: m(20),
+    width: m(70),
+    height: m(70),
+    borderRadius: m(35),
+    marginRight: m(16),
+    borderWidth: 3,
+    borderColor: '#E5E7EB',
   },
   profileInfo: {
-    alignItems: 'center',
-    marginVertical: m(20),
-  },
-  profileIcon: {
-    backgroundColor: '#f0f0f0',
-    padding: m(20),
-    borderRadius: m(40),
-    borderColor: '#f5f5f5',
-    borderWidth: 2,
+    flex: 1,
   },
   profileName: {
-    fontSize: m(24),
-    fontFamily: 'Montserrat-Bold',
-    color: '#333333',
-    marginTop: m(10),
+    fontSize: m(22),
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: m(2),
   },
   profileEmail: {
     fontSize: m(14),
-    fontFamily: 'Poppins-Regular',
-    color: '#666666',
-    marginTop: m(5),
+    color: '#6B7280',
+    marginBottom: m(8),
   },
-  optionsContainer: {
-    marginTop: 0,
-    paddingHorizontal: m(20),
-  },
-  option: {
+  verifiedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: m(15),
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: m(10),
+    paddingVertical: m(4),
+    borderRadius: m(20),
+    alignSelf: 'flex-start',
+    gap: m(4),
   },
-  optionText: {
-    fontSize: m(16),
-    fontFamily: 'Poppins-Regular',
-    color: '#333333',
-    marginLeft: m(20),
+  verifiedText: {
+    fontSize: m(12),
+    fontWeight: '500',
+    color: '#065F46',
   },
-  logoutButton: {
-    backgroundColor: '#e74c3c',
-    borderRadius: m(8),
-    paddingVertical: m(12),
-    marginHorizontal: m(40),
+  // Menu Section
+  menuSection: {
     marginBottom: m(20),
+  },
+  sectionTitle: {
+    fontSize: m(18),
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: m(16),
+    paddingHorizontal: m(4),
+  },
+  menuGrid: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: m(16),
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    overflow: 'hidden',
+  },
+  menuItem: {
+    flexDirection: 'row',
     alignItems: 'center',
-    width: '60%',
-    alignSelf: 'center',
+    paddingVertical: m(16),
+    paddingHorizontal: m(16),
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  menuIconContainer: {
+    width: m(40),
+    height: m(40),
+    borderRadius: m(10),
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: m(12),
+  },
+  menuLabel: {
+    flex: 1,
+    fontSize: m(16),
+    fontWeight: '500',
+    color: '#374151',
   },
 
+  // App Info
+  appInfoCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: m(16),
+    padding: m(16),
+    marginBottom: m(20),
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  appInfoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: m(16),
+    paddingBottom: m(12),
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+    gap: m(8),
+  },
+  appInfoTitle: {
+    fontSize: m(16),
+    fontWeight: '600',
+    color: '#111827',
+  },
+  appInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: m(8),
+  },
+  appInfoLabel: {
+    fontSize: m(14),
+    color: '#6B7280',
+  },
+  appInfoValue: {
+    fontSize: m(14),
+    fontWeight: '500',
+    color: '#374151',
+  },
+
+  // Logout Button
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: m(8),
+    backgroundColor: '#FEF2F2',
+    borderRadius: m(12),
+    padding: m(16),
+    borderWidth: 1,
+    borderColor: '#FEE2E2',
+  },
   logoutButtonText: {
-    color: '#FFFFFF',
-    fontSize: m(18),
-    fontFamily: 'Poppins-SemiBold',
+    fontSize: m(16),
+    fontWeight: '600',
+    color: '#EF4444',
   },
 });

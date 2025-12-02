@@ -1,38 +1,33 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
-  Linking,
   ScrollView,
   Image,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
-import {useDispatch, useSelector} from 'react-redux';
-import {getLoanByAadhar} from '../../Redux/Slices/loanSlice';
-import {m} from 'walstar-rn-responsive';
+import { useDispatch, useSelector } from 'react-redux';
+import { getLoanByAadhar } from '../../Redux/Slices/loanSlice';
+import { m } from 'walstar-rn-responsive';
 import LoaderSkeleton from '../../Components/LoaderSkeleton';
 import AgreementModal from '../PromptBox/AgreementModal';
+import Header from '../../Components/Header';
 
-const OldHistoryPage = ({route, navigation}) => {
-  const {aadhaarNumber} = route.params;
+const OldHistoryPage = ({ route, navigation }) => {
+  const { aadhaarNumber } = route.params;
   const [expandedLoanIndex, setExpandedLoanIndex] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedLoanAgreement, setSelectedLoanAgreement] = useState(null);
   const dispatch = useDispatch();
-  const {loans, totalAmount, loading, error} = useSelector(
-    state => state.loans,
+  const { loans, totalAmount, loading, error } = useSelector(
+    state => state.loans
   );
 
   useEffect(() => {
     if (aadhaarNumber) {
-      try {
-        dispatch(getLoanByAadhar({aadhaarNumber}));
-      } catch (error) {
-        console.log(error, 'Error');
-      }
+      dispatch(getLoanByAadhar({ aadhaarNumber }));
     }
   }, [aadhaarNumber, dispatch]);
 
@@ -43,142 +38,126 @@ const OldHistoryPage = ({route, navigation}) => {
   const borrower = loans && loans[0];
 
   const handleViewAgreement = agreement => {
-    setSelectedLoanAgreement(agreement); // Set the selected loan agreement
-    setIsModalVisible(true); // Show the modal
+    setSelectedLoanAgreement(agreement);
+    setIsModalVisible(true);
   };
 
   return (
-    <>
-      <View style={styles.headerBar}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}>
-          <Icon name="arrow-left" size={24} color="#FFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerText}>Old History Details</Text>
-      </View>
+    <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+      <Header title="Old History Details" showBackButton />
 
       {loading ? (
         <LoaderSkeleton />
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ padding: m(20) }}
+        >
           {error ? (
             <Text style={styles.emptyText}>{error.message}</Text>
           ) : (
-            <View style={styles.container}>
-              <View style={styles.profileInfo}>
-                {borrower?.userProfileImage ? (
-                  <Image
-                    source={{uri: borrower?.userProfileImage}}
-                    style={styles.profileImage}
-                  />
-                ) : (
-                  <Icon
-                    name="user"
-                    size={50}
-                    color="#b80266"
-                    style={styles.profileIcon}
-                  />
-                )}
+            <>
+              {/* Borrower Profile Card */}
+              <View style={styles.profileCard}>
+                <View style={{ position: 'relative' }}>
+                  {borrower?.userProfileImage ? (
+                    <Image
+                      source={{ uri: borrower?.userProfileImage }}
+                      style={styles.profileImage}
+                    />
+                  ) : (
+                    <Icon
+                      name="user"
+                      size={60}
+                      color="#ff6700"
+                      style={styles.profileIcon}
+                    />
+                  )}
 
-                <Text style={styles.detailTextName}>{borrower?.name}</Text>
-                <Text style={styles.aadharHeading}>
-                  Aadhar No: {aadhaarNumber || borrower?.aadhaarNumber}
+                  {/* Camera icon */}
+                  <TouchableOpacity style={styles.cameraIcon}>
+                    <Icon name="camera" size={20} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+
+                <Text style={styles.borrowerName}>{borrower?.name}</Text>
+                <Text style={styles.aadharText}>
+                  Aadhar: {aadhaarNumber || borrower?.aadhaarNumber}
                 </Text>
-                <Text style={styles.detailText}>
+                <Text style={styles.borrowerDetail}>
                   Mobile: {borrower?.mobileNumber}
                 </Text>
-                <Text style={styles.detailText}>
+                <Text style={styles.borrowerDetail}>
                   Address: {borrower?.address}
                 </Text>
               </View>
 
-              <Text style={styles.totalAmountText}>
-                Total Pending Loan Amount: {totalAmount} Rs
-              </Text>
+              {/* Total Loan Amount */}
+              <View style={styles.totalAmountCard}>
+                <Text style={styles.totalAmountText}>
+                  Total Pending Loan Amount: {totalAmount} Rs
+                </Text>
+              </View>
 
-              {/* Render Loan details */}
-              {loans &&
-                loans.map((loan, index) => (
-                  <View key={loan._id} style={styles.loanItem}>
-                    <TouchableOpacity
-                      onPress={() => toggleDetails(index)}
-                      style={styles.loanNameContainer}>
-                      <View
-                        style={{
-                          flex: 1,
-                          flexDirection: 'row',
-                          justifyContent: 'space-between',
-                        }}>
-                        <Text style={styles.loanName}>
-                          {loan?.purpose?.split(' ').slice(0, 3).join(' ')}
+              {/* Loan List */}
+              {loans?.map((loan, index) => (
+                <View key={loan._id} style={styles.loanCard}>
+                  <TouchableOpacity
+                    onPress={() => toggleDetails(index)}
+                    style={styles.loanHeader}
+                  >
+                    <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <Text style={styles.loanTitle}>
+                        {loan?.purpose?.split(' ').slice(0, 3).join(' ')}
+                      </Text>
+                      <Text style={styles.loanAmount}>({loan?.amount} Rs)</Text>
+                    </View>
+                    <Icon
+                      name={expandedLoanIndex === index ? 'chevron-up' : 'chevron-down'}
+                      size={18}
+                      color="#ff6700"
+                    />
+                  </TouchableOpacity>
+
+                  {expandedLoanIndex === index && (
+                    <View style={styles.loanDetails}>
+                      <Text style={styles.loanDetailText}>
+                        Loan Amount: {loan?.amount} Rs
+                      </Text>
+                      <Text style={styles.loanDetailText}>
+                        Start Date:{' '}
+                        {new Date(loan?.loanStartDate).toLocaleDateString()}
+                      </Text>
+                      <Text style={styles.loanDetailText}>
+                        End Date:{' '}
+                        {new Date(loan?.loanEndDate).toLocaleDateString()}
+                      </Text>
+                      <Text style={styles.loanDetailText}>Status: {loan?.status}</Text>
+
+                      <Text style={styles.lenderTitle}>Loan Given By:</Text>
+                      <View style={styles.lenderInfo}>
+                        <Text style={styles.lenderText}>
+                          Name: {loan?.lenderId?.userName}
                         </Text>
-                        <Text style={styles.loanName}>({loan?.amount} Rs)</Text>
+                        <Text style={styles.lenderText}>
+                          Email: {loan?.lenderId?.email}
+                        </Text>
+                        <Text style={styles.lenderText}>
+                          Mobile: {loan?.lenderId?.mobileNo}
+                        </Text>
                       </View>
 
-                      <Icon
-                        name={
-                          expandedLoanIndex === index
-                            ? 'chevron-up'
-                            : 'chevron-down'
-                        }
-                        size={18}
-                        color="#b80266"
-                      />
-                    </TouchableOpacity>
-
-                    {expandedLoanIndex === index && (
-                      <View style={styles.loanDetailsContainer}>
-                        <Text style={styles.loanDetailText}>
-                          Loan Amount: {loan?.amount} Rs
-                        </Text>
-                        <Text style={styles.loanDetailText}>
-                          Start Date:{' '}
-                          {new Date(loan?.loanStartDate).toLocaleDateString()}
-                        </Text>
-                        <Text style={styles.loanDetailText}>
-                          End Date:{' '}
-                          {new Date(loan?.loanEndDate).toLocaleDateString()}
-                        </Text>
-                        <Text style={styles.loanDetailText}>
-                          Status: {loan?.status}
-                        </Text>
-
-                        {/* Lender details */}
-                        <Text style={styles.lenderDetailTitle}>
-                          Loan given by
-                        </Text>
-                        <View style={styles.lenderDetailsContainer}>
-                          <Text style={styles.lenderDetailText}>
-                            Lender: {loan?.lenderId?.userName}
-                          </Text>
-                          <Text style={styles.lenderDetailText}>
-                            Email: {loan?.lenderId?.email}
-                          </Text>
-                          <Text style={styles.lenderDetailText}>
-                            Mobile: {loan?.lenderId?.mobileNo}
-                          </Text>
-                        </View>
-
-                        <TouchableOpacity
-                          style={styles.linkButton}
-                          onPress={() => handleViewAgreement(loan.agreement)}>
-                          <Text style={styles.linkText}>View Agreement</Text>
-                        </TouchableOpacity>
-                        {/* <TouchableOpacity
-                          onPress={() =>
-                            Linking.openURL(loan?.digitalSignature)
-                          }
-                          style={styles.linkButton}>
-                          <Text style={styles.linkText}>
-                            View Digital Signature
-                          </Text>
-                        </TouchableOpacity> */}
-                      </View>
-                    )}
-                  </View>
-                ))}
-            </View>
+                      <TouchableOpacity
+                        style={styles.viewAgreementBtn}
+                        onPress={() => handleViewAgreement(loan.agreement)}
+                      >
+                        <Text style={styles.viewAgreementText}>View Agreement</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              ))}
+            </>
           )}
         </ScrollView>
       )}
@@ -188,163 +167,142 @@ const OldHistoryPage = ({route, navigation}) => {
         agreement={selectedLoanAgreement}
         onClose={() => setIsModalVisible(false)}
       />
-    </>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  profileCard: {
+    backgroundColor: '#fff',
+    alignItems: 'center',
     padding: m(20),
-    backgroundColor: '#f5f5f5',
-  },
-  headerBar: {
-    backgroundColor: '#b80266',
-    height: m(70),
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexDirection: 'row',
-    paddingTop: m(15),
-    borderBottomEndRadius: m(15),
-    borderBottomStartRadius: m(15),
-  },
-  backButton: {
-    position: 'absolute',
-    left: m(15),
-    top: m(20),
-    padding: m(10),
-  },
-  headerText: {
-    color: '#FFFFFF',
-    fontSize: m(20),
-    fontFamily: 'Montserrat-Bold',
-  },
-  profileInfo: {
-    alignItems: 'center',
-    marginBottom: m(20),
-    backgroundColor: '#b80266',
-    paddingVertical: m(20),
-    paddingHorizontal: m(25),
     borderRadius: m(16),
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: m(4)},
+    shadowOffset: { width: 0, height: m(4) },
     shadowOpacity: 0.1,
-    shadowRadius: m(10),
+    shadowRadius: m(8),
     elevation: 5,
-  },
-  profileIcon: {
-    backgroundColor: 'white',
-    padding: m(15),
-    borderRadius: m(40),
-    marginBottom: m(10),
+    marginBottom: m(20),
   },
   profileImage: {
     width: m(100),
     height: m(100),
     borderRadius: m(50),
-    borderColor: '#dbd9d9',
-    borderWidth: 1,
-    marginBottom: m(5),
+    marginBottom: m(10),
   },
-  aadharHeading: {
-    fontSize: m(16),
-    fontWeight: 'bold',
-    backgroundColor: '#FFF',
-    color: '#b80266',
-    padding: m(10),
-    paddingHorizontal: m(30),
-    margin: m(8),
-    borderRadius: m(10),
+  profileIcon: {
+    backgroundColor: '#ffe6d5',
+    padding: m(15),
+    borderRadius: m(40),
+    marginBottom: m(10),
   },
-  detailTextName: {
-    fontSize: m(20),
-    fontWeight: 'bold',
-    color: '#FFF',
+  cameraIcon: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#ff6700',
+    padding: m(6),
+    borderRadius: m(20),
+    borderWidth: 2,
+    borderColor: '#fff',
   },
-  detailText: {
-    fontSize: m(16),
-    fontWeight: 'bold',
-    color: '#FFF',
-  },
-  totalAmountText: {
+  borrowerName: {
     fontSize: m(18),
     fontWeight: 'bold',
-    color: '#b80266',
-    marginBottom: m(20),
+    color: '#333',
+    marginBottom: m(5),
+  },
+  aadharText: {
+    fontSize: m(14),
+    color: '#ff6700',
+    fontWeight: '600',
+    marginBottom: m(5),
+  },
+  borrowerDetail: {
+    fontSize: m(14),
+    color: '#555',
+    marginBottom: m(3),
+    textAlign: 'center',
+  },
+  totalAmountCard: {
+    backgroundColor: '#fff',
     padding: m(15),
-    backgroundColor: '#f0f0f0',
-    borderRadius: m(10),
+    borderRadius: m(12),
+    marginBottom: m(20),
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: m(2)},
-    shadowOpacity: 0.1,
-    shadowRadius: m(5),
+    shadowOffset: { width: 0, height: m(2) },
+    shadowOpacity: 0.05,
+    shadowRadius: m(4),
     elevation: 3,
   },
-  loanItem: {
-    marginBottom: m(20),
+  totalAmountText: {
+    fontSize: m(16),
+    fontWeight: 'bold',
+    color: '#ff6700',
+    textAlign: 'center',
   },
-  loanNameContainer: {
+  loanCard: {
+    backgroundColor: '#fff',
+    borderRadius: m(12),
+    marginBottom: m(15),
+    padding: m(12),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: m(2) },
+    shadowOpacity: 0.05,
+    shadowRadius: m(4),
+    elevation: 3,
+  },
+  loanHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: m(15),
-    backgroundColor: '#f9f9f9',
-    borderRadius: m(12),
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: m(2)},
-    shadowOpacity: 0.1,
-    shadowRadius: m(5),
-    elevation: 3,
+    alignItems: 'center',
   },
-  loanName: {
+  loanTitle: {
     fontSize: m(16),
     fontWeight: '600',
     color: '#333',
   },
-  loanDetailsContainer: {
-    backgroundColor: '#fafafa',
-    borderRadius: m(8),
+  loanAmount: {
+    fontSize: m(14),
+    fontWeight: '600',
+    color: '#ff6700',
+  },
+  loanDetails: {
     marginTop: m(10),
-    paddingVertical: m(15),
-    paddingHorizontal: m(20),
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: m(4)},
-    shadowOpacity: 0.1,
-    shadowRadius: m(10),
-    elevation: 3,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    paddingTop: m(10),
   },
   loanDetailText: {
     fontSize: m(14),
     color: '#555',
-    marginBottom: m(6),
+    marginBottom: m(5),
   },
-  lenderDetailTitle: {
-    fontSize: m(16),
+  lenderTitle: {
+    fontSize: m(14),
+    fontWeight: '700',
     color: '#333',
-    fontWeight: 'bold',
-    marginTop: m(12),
+    marginTop: m(8),
   },
-  lenderDetailsContainer: {
-    paddingLeft: m(20),
-    marginTop: m(6),
-    marginBottom: m(12),
+  lenderInfo: {
+    paddingLeft: m(10),
+    marginBottom: m(10),
   },
-  lenderDetailText: {
-    fontSize: m(14),
+  lenderText: {
+    fontSize: m(13),
     color: '#555',
-    marginBottom: m(4),
+    marginBottom: m(3),
   },
-  linkButton: {
-    marginTop: m(12),
+  viewAgreementBtn: {
+    backgroundColor: '#ff6700',
     paddingVertical: m(10),
-    paddingHorizontal: m(16),
-    backgroundColor: '#b80266',
-    borderRadius: m(6),
-    marginBottom: 0,
+    borderRadius: m(8),
+    alignItems: 'center',
+    marginTop: m(8),
   },
-  linkText: {
-    fontSize: m(14),
-    color: '#FFF',
-    textAlign: 'center',
+  viewAgreementText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
   emptyText: {
     textAlign: 'center',

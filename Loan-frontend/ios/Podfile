@@ -14,7 +14,7 @@ if linkage != nil
   use_frameworks! :linkage => linkage.to_sym
 end
 
-target 'loanhub' do
+target 'Loanhub' do
   config = use_native_modules!
 
   use_react_native!(
@@ -22,6 +22,11 @@ target 'loanhub' do
     # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
+  
+  # Enable modular headers only for Firebase dependencies
+  pod 'GoogleUtilities', :modular_headers => true
+  pod 'FirebaseCore', :modular_headers => true
+  pod 'FirebaseCoreInternal', :modular_headers => true
 
   post_install do |installer|
     # https://github.com/facebook/react-native/blob/main/packages/react-native/scripts/react_native_pods.rb#L197-L202
@@ -31,5 +36,14 @@ target 'loanhub' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+    
+    # Enable modular headers for all Firebase and Google pods
+    installer.pods_project.targets.each do |target|
+      if target.name.start_with?('Firebase') || target.name.start_with?('GoogleUtilities') || target.name.start_with?('PromisesObjC')
+        target.build_configurations.each do |config|
+          config.build_settings['DEFINES_MODULE'] = 'YES'
+        end
+      end
+    end
   end
 end
