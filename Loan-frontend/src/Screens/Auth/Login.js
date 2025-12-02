@@ -7,7 +7,6 @@ import {
   StyleSheet,
   StatusBar,
   Image,
-  Platform,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useDispatch, useSelector} from 'react-redux';
@@ -84,7 +83,7 @@ export default function LoginScreen({navigation}) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" {...(Platform.OS === 'android' && {backgroundColor: '#fff'})} />
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <Text style={styles.welcomeText}>Welcome to LoanHub</Text>
       <Text style={styles.headerText}>Login to Continue</Text>
 

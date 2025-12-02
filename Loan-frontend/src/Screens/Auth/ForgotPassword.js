@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   StatusBar,
   Alert,
-  Platform,
 } from 'react-native';
 import {useDispatch, useSelector} from 'react-redux';
 import {forgotPassword} from '../../Redux/Slices/authslice';
@@ -83,7 +82,7 @@ export default function ForgotPassword({navigation}) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" {...(Platform.OS === 'android' && {backgroundColor: '#fff'})} />
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <Text style={styles.headerText}>Forgot Password</Text>
       <Text style={styles.instructionText}>
         Enter your email address to receive an OTP.

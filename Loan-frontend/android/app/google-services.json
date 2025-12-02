@@ -12,7 +12,12 @@
           "package_name": "com.loanhub"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "500976764422-v7drr7k9sviauspugp8r33flni5rpv37.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAG4ALmS7AsM_Jaas3B_IZ4BKatjCoqAyQ"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "500976764422-v7drr7k9sviauspugp8r33flni5rpv37.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "500976764422-uj8tdeho43e9s9hgl8pp0dvdq7j0mqsi.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "org.reactjs.native.example.Loanhub"
+              }
+            }
+          ]
         }
       }
     }

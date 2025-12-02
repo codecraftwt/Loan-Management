@@ -17,7 +17,6 @@ import SettingsScreen from '../Screens/Dashboard/SettingsScreen';
 import SubscriptionScreen from '../Screens/Subscription/SubscriptionScreen';
 import HelpAndSupportScreen from '../Screens/Auth/HelpAndSupportScreen';
 import PersonalLoan from '../Screens/Dashboard/PersonalLoan';
-import AnalyticsScreen from '../Screens/Dashboard/AnalyticsScreen';
 
 const Navigation = () => {
   const Stack = createNativeStackNavigator();
@@ -48,7 +47,6 @@ const Navigation = () => {
       />
 
       <Stack.Screen name="Settings" component={SettingsScreen} />
-      <Stack.Screen name="AnalyticsScreen" component={AnalyticsScreen} />
     </Stack.Navigator>
   );
 };

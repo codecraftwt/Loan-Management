@@ -7,7 +7,6 @@ import {
   StyleSheet,
   StatusBar,
   Alert,
-  Platform,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useDispatch} from 'react-redux';
@@ -162,7 +161,7 @@ export default function Register({navigation}) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" {...(Platform.OS === 'android' && {backgroundColor: '#fff'})} />
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <Text style={styles.welcomeText}>Create an Account</Text>
       <Text style={styles.headerText}>Register to LoanHub</Text>
 

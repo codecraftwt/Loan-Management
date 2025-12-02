@@ -1,23 +1,34 @@
 import {createSlice, createAsyncThunk} from '@reduxjs/toolkit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import instance from '../../Utils/AxiosInstance';
-// NOTE: Firebase cloud messaging is temporarily disabled on iOS while
-// resolving NativeEventEmitter issues. The token registration helpers
-// are currently no-ops to avoid runtime crashes.
-// import messaging from '@react-native-firebase/messaging';
+import messaging from '@react-native-firebase/messaging';
 
 // Function to register the device token after login or signup
 const registerDeviceToken = async userId => {
-  // Temporarily disabled to prevent FCM from initializing while
-  // investigating NativeEventEmitter issues on iOS.
-  console.log('registerDeviceToken skipped for user:', userId);
+  try {
+    // Get the device token from Firebase Cloud Messaging
+    const deviceToken = await messaging().getToken();
+
+    if (deviceToken) {
+      // Send the device token to the backend API
+      await instance.post('user/register-device-token', {userId, deviceToken});
+    }
+  } catch (error) {
+    console.error('Error registering device token:', error);
+  }
 };
 
 // Function to remove device token
 const removeDeviceToken = async () => {
-  // Temporarily disabled to prevent FCM from initializing while
-  // investigating NativeEventEmitter issues on iOS.
-  console.log('removeDeviceToken skipped');
+  try {
+    const deviceToken = await messaging().getToken();
+    if (deviceToken) {
+      // Send the request to the backend to remove the device token
+      await instance.post('user/remove-device-token', {deviceToken});
+    }
+  } catch (error) {
+    console.error('Error removing device token:', error);
+  }
 };
 
 // Thunk for user login

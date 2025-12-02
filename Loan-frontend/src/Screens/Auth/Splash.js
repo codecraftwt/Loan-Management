@@ -1,5 +1,5 @@
 import React, {useEffect} from 'react';
-import {View, Text, Image, StyleSheet, StatusBar, Platform} from 'react-native';
+import {View, Text, Image, StyleSheet, StatusBar} from 'react-native';
 import {logo} from '../../Assets';
 import {useDispatch} from 'react-redux';
 import {useNavigation} from '@react-navigation/native';
@@ -38,7 +38,7 @@ export default function SplashScreen({navigation}) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" {...(Platform.OS === 'android' && {backgroundColor: '#b80266'})} />
+      <StatusBar barStyle="light-content" backgroundColor="#b80266" />
       <Image resizeMode="contain" style={styles.logo} source={logo} />
       <Text style={styles.welcomeText}>Manage Your Loans </Text>
     </View>
