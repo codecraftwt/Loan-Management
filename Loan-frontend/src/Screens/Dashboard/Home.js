@@ -8,7 +8,6 @@ import {
   RefreshControl,
   Animated,
   Easing,
-  Dimensions,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
@@ -18,8 +17,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import useFetchUserFromStorage from '../../Redux/hooks/useFetchUserFromStorage';
 import { m } from 'walstar-rn-responsive';
 import Header from '../../Components/Header';
-
-const { width } = Dimensions.get('window');
 
 export default function Home() {
   const navigation = useNavigation();
@@ -335,7 +332,7 @@ export default function Home() {
               {
                 icon: 'clock',
                 value: loanCount?.loansPendingCount || 0,
-                label: 'Active',
+                label: 'Pending',
                 gradient: ['#E1BEE7', '#e6d6e9ff'],
                 textColor: '#7B1FA2'
               },
@@ -521,7 +518,7 @@ const styles = StyleSheet.create({
     paddingBottom: m(40),
   },
   content: {
-    paddingBottom: m(30),
+    paddingBottom: m(80),
   },
   // Welcome Section
   welcomeContent: {
@@ -540,7 +537,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   greeting: {
-    fontSize: m(28),
+    fontSize: m(24),
     fontFamily: 'Montserrat-Bold',
     color: 'black',
     marginBottom: m(6),
@@ -696,7 +693,7 @@ const styles = StyleSheet.create({
     marginBottom: m(16),
   },
   sectionTitle: {
-    fontSize: m(20),
+    fontSize: m(18),
     fontFamily: 'Montserrat-Bold',
     color: '#2c3e50',
     marginBottom: m(16),

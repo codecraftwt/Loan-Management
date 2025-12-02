@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: m(16),
-    paddingBottom: m(40),
+    paddingBottom: m(45),
   },
   
   // Profile Card
@@ -270,6 +270,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: m(16),
     padding: m(20),
+    paddingVertical: m(14),
     marginBottom: m(16),
     borderWidth: 1,
     borderColor: '#E5E7EB',
@@ -282,25 +283,25 @@ const styles = StyleSheet.create({
   profileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: m(20),
+    marginBottom: m(12),
   },
   profileAvatar: {
-    width: m(60),
-    height: m(60),
-    borderRadius: m(30),
+    width: m(50),
+    height: m(50),
+    borderRadius: m(25),
     backgroundColor: 'black',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: m(16),
   },
   avatarText: {
-    fontSize: m(24),
+    fontSize: m(23),
     fontWeight: '600',
     color: '#FFFFFF',
   },
   profileImage: {
-    width: m(60),
-    height: m(60),
+    width: m(50),
+    height: m(50),
     borderRadius: m(30),
     marginRight: m(16),
     borderWidth: 2,
@@ -313,10 +314,10 @@ const styles = StyleSheet.create({
     fontSize: m(20),
     fontWeight: '600',
     color: '#111827',
-    marginBottom: m(8),
+    marginBottom: m(4),
   },
   profileMeta: {
-    gap: m(8),
+    gap: m(4),
   },
   metaItem: {
     flexDirection: 'row',
@@ -376,14 +377,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: m(4),
   },
   detailsGrid: {
-    gap: m(12),
+    gap: m(10),
   },
   detailCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: m(12),
-    padding: m(16),
+    padding: m(13),
     borderWidth: 1,
     borderColor: '#E5E7EB',
     elevation: 1,
@@ -452,8 +453,9 @@ const styles = StyleSheet.create({
   summaryCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: m(16),
-    padding: m(20),
-    marginBottom: m(16),
+    padding: m(16),
+    paddingVertical: m(14),
+    marginBottom: m(12),
     borderWidth: 1,
     borderColor: '#E5E7EB',
     elevation: 2,
@@ -463,10 +465,10 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   summaryTitle: {
-    fontSize: m(18),
+    fontSize: m(17),
     fontWeight: '600',
     color: '#111827',
-    marginBottom: m(16),
+    marginBottom: m(10),
   },
   summaryRow: {
     flexDirection: 'row',
@@ -482,7 +484,7 @@ const styles = StyleSheet.create({
     marginBottom: m(4),
   },
   summaryValue: {
-    fontSize: m(20),
+    fontSize: m(16),
     fontWeight: '700',
     color: '#111827',
   },
@@ -496,6 +498,7 @@ const styles = StyleSheet.create({
   footer: {
     gap: m(8),
     paddingHorizontal: m(4),
+    marginBottom: m(16),
   },
   footerItem: {
     flexDirection: 'row',

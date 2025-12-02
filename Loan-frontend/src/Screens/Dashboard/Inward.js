@@ -32,6 +32,7 @@ export default function Inward({navigation}) {
     state => state.loans,
   );
   const aadhaarNumber = user?.aadharCardNo;
+  console.log("loans from inward ====>", loans);
 
   const [isPromptVisible, setIsPromptVisible] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState(null);
@@ -336,7 +337,7 @@ export default function Inward({navigation}) {
       />
 
       {/* Loan List */}
-      {loading ? (
+      {false ? (
         <LoaderSkeleton />
       ) : (
         <ScrollView
@@ -548,7 +549,7 @@ const styles = StyleSheet.create({
     marginBottom: m(2),
   },
   totalAmountValue: {
-    fontSize: m(24),
+    fontSize: m(20),
     fontWeight: '700',
     color: '#111827',
   },
@@ -607,7 +608,7 @@ const styles = StyleSheet.create({
     color: '#374151',
   },
   amountFilterContainer: {
-    marginBottom: m(20),
+    marginBottom: m(16),
   },
   amountRow: {
     flexDirection: 'row',
@@ -638,7 +639,7 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
   statusFilterContainer: {
-    marginBottom: m(24),
+    marginBottom: m(20),
   },
   statusButtons: {
     flexDirection: 'row',
@@ -703,7 +704,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: m(16),
     paddingTop: m(8),
-    paddingBottom: m(90),
+    paddingBottom: m(130),
   },
   emptyState: {
     alignItems: 'center',
@@ -749,8 +750,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   userAvatar: {
-    width: m(48),
-    height: m(48),
+    width: m(46),
+    height: m(46),
     borderRadius: m(24),
     marginRight: m(12),
     borderWidth: 2,
@@ -787,7 +788,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   amountText: {
-    fontSize: m(20),
+    fontSize: m(17),
     fontWeight: '700',
     color: '#111827',
   },
@@ -800,7 +801,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
     borderRadius: m(12),
     padding: m(12),
-    marginBottom: m(16),
+    marginBottom: m(14),
   },
   detailItem: {
     flexDirection: 'row',
@@ -866,8 +867,8 @@ const styles = StyleSheet.create({
   actionButtons: {
     flexDirection: 'row',
     gap: m(12),
-    marginTop: m(16),
-    paddingTop: m(16),
+    marginTop: m(12),
+    paddingTop: m(12),
     borderTopWidth: 1,
     borderTopColor: '#F3F4F6',
   },
@@ -877,7 +878,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: m(8),
-    paddingVertical: m(12),
+    paddingVertical: m(10),
     borderRadius: m(12),
   },
   acceptButton: {
@@ -887,7 +888,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#EF4444',
   },
   actionButtonText: {
-    fontSize: m(14),
+    fontSize: m(13),
     fontWeight: '600',
     color: '#FFFFFF',
   },

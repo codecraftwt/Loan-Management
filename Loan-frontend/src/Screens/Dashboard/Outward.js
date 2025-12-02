@@ -22,7 +22,6 @@ import Toast from 'react-native-toast-message';
 import LoaderSkeleton from '../../Components/LoaderSkeleton';
 import { m } from 'walstar-rn-responsive';
 import Header from '../../Components/Header';
-import { Picker } from '@react-native-picker/picker';
 
 const Outward = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -333,9 +332,6 @@ const Outward = ({ navigation }) => {
                         <Text style={styles.userName} numberOfLines={1}>
                           {loan.name}
                         </Text>
-                        {/* <Text style={styles.loanId}>
-                          ID: {loan._id?.slice(-8) || 'N/A'}
-                        </Text> */}
                       </View>
                     </View>
                     <View style={styles.amountContainer}>
@@ -602,12 +598,10 @@ const styles = StyleSheet.create({
   // Loan List
   loanListContainer: {
     padding: m(16),
-    // paddingBottom: m(360),
   },
    scrollContent: {
-    // paddingHorizontal: m(16),
     paddingTop: m(8),
-    paddingBottom: m(100),
+    paddingBottom: m(130),
   },
   emptyState: {
     alignItems: 'center',
@@ -645,7 +639,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: m(16),
+    marginBottom: m(6),
   },
   userInfo: {
     flexDirection: 'row',
@@ -653,8 +647,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   userAvatar: {
-    width: m(48),
-    height: m(48),
+    width: m(46),
+    height: m(46),
     borderRadius: m(24),
     marginRight: m(12),
   },
@@ -681,20 +675,16 @@ const styles = StyleSheet.create({
     color: '#111827',
     marginBottom: m(2),
   },
-  loanId: {
-    fontSize: m(12),
-    color: '#6B7280',
-  },
   amountContainer: {
     alignItems: 'flex-end',
   },
   amountText: {
-    fontSize: m(20),
+    fontSize: m(16),
     fontWeight: '700',
     color: '#111827',
   },
   amountLabel: {
-    fontSize: m(12),
+    fontSize: m(11.6),
     color: '#6B7280',
     marginTop: m(2),
   },
@@ -702,12 +692,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
     borderRadius: m(12),
     padding: m(12),
-    marginBottom: m(16),
+    marginBottom: m(10),
   },
   detailItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: m(8),
+    marginBottom: m(6),
   },
   detailLabel: {
     fontSize: m(12),
@@ -726,7 +716,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: m(12),
+    paddingTop: m(10),
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
   },

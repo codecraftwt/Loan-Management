@@ -95,23 +95,19 @@ export default function LoginScreen({ navigation }) {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
       <StatusBar barStyle="light-content" backgroundColor="#ff6700" />
 
-      {/* Orange Gradient Header (Matching your app theme) */}
-      <View style={styles.gradientHeader}>
-        <View style={styles.headerContent}>
-          <View style={styles.logoContainer}>
-            <Text style={styles.appName}>LoanHub</Text>
-          </View>
-          <Text style={styles.tagline}>Smart Loan Management</Text>
-        </View>
-      </View>
-
       {/* ScrollView to prevent keyboard hiding content */}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled">
-        
+
+        <View style={styles.headerContent}>
+          <View style={styles.logoContainer}>
+            <Text style={styles.appName}>LoanHub</Text>
+          </View>
+          <Text style={styles.tagline}>Smart Loan Management</Text>
+        </View>
         {/* Login Form Card - EXACTLY your design */}
         <View style={styles.formCard}>
           <Text style={styles.formTitle}>Welcome Back</Text>
@@ -216,15 +212,12 @@ export default function LoginScreen({ navigation }) {
 
           {/* Alternative Actions */}
           <TouchableOpacity
-            style={styles.registerButton}
+            // style={styles.registerButton}
             onPress={() => navigation.navigate('Register')}>
-            <LinearGradient
-              colors={['#fff', '#f8f8f8']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
+            <View
               style={styles.registerButtonGradient}>
               <Text style={styles.registerButtonText}>Create New Account</Text>
-            </LinearGradient>
+            </View>
           </TouchableOpacity>
 
           {/* Forgot Password */}
@@ -236,13 +229,13 @@ export default function LoginScreen({ navigation }) {
         </View>
 
         {/* Footer */}
-        <View style={styles.footer}>
+        {/* <View style={styles.footer}>
           <Text style={styles.footerText}>
             By signing in, you agree to our{' '}
             <Text style={styles.footerLink}>Terms & Conditions</Text> and{' '}
             <Text style={styles.footerLink}>Privacy Policy</Text>
           </Text>
-        </View>
+        </View> */}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -255,13 +248,11 @@ const styles = StyleSheet.create({
   },
 
   // Orange Gradient Header (Matching your header) - EXACTLY YOUR DESIGN
-  gradientHeader: {
+  headerContent: {
     borderBottomLeftRadius: m(25),
     borderBottomRightRadius: m(25),
     paddingTop: Platform.OS === 'ios' ? m(50) : m(40),
-    backgroundColor: 'transparent', // Keeping your transparent header
-  },
-  headerContent: {
+    backgroundColor: 'transparent',
     alignItems: 'center',
     marginTop: m(10),
   },
@@ -287,7 +278,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: m(40), // Extra padding so button isn't hidden
+    paddingBottom: m(40),
+    backgroundColor: '#f8f8f8',
   },
 
   // Form Card - EXACTLY YOUR DESIGN
@@ -413,15 +405,8 @@ const styles = StyleSheet.create({
   },
 
   // Alternative Buttons - EXACTLY YOUR DESIGN
-  registerButton: {
-    borderRadius: m(12),
-    overflow: 'hidden',
-    marginBottom: m(12),
-    borderWidth: 1,
-    borderColor: '#FFEDD5',
-  },
   registerButtonGradient: {
-    paddingVertical: m(16),
+    paddingVertical: m(8),
     alignItems: 'center',
   },
   registerButtonText: {
@@ -442,19 +427,19 @@ const styles = StyleSheet.create({
   },
 
   // Footer - EXACTLY YOUR DESIGN
-  footer: {
-    marginTop: 'auto',
-    marginBottom: m(20),
-    paddingHorizontal: m(20),
-  },
-  footerText: {
-    fontSize: m(12),
-    color: '#888',
-    textAlign: 'center',
-    lineHeight: m(18),
-  },
-  footerLink: {
-    color: '#ff6700',
-    fontWeight: '500',
-  },
+  // footer: {
+  //   marginTop: 'auto',
+  //   marginBottom: m(20),
+  //   paddingHorizontal: m(20),
+  // },
+  // footerText: {
+  //   fontSize: m(12),
+  //   color: '#888',
+  //   textAlign: 'center',
+  //   lineHeight: m(18),
+  // },
+  // footerLink: {
+  //   color: '#ff6700',
+  //   fontWeight: '500',
+  // },
 });

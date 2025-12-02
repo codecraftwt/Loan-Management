@@ -45,12 +45,12 @@ export default function BottomNavigation() {
             position: 'absolute',
             left: m(16),
             right: m(16),
-            bottom: insets.bottom + m(2), // <-- Safe area applied here
+            bottom: insets.bottom,
             height: m(68),
             backgroundColor: '#e5dad1',
             borderTopWidth: 0,
             paddingTop: m(5),
-            paddingBottom: insets.bottom > 0 ? m(5) : 0, // Extra padding if needed
+            paddingBottom: insets.bottom > 0 ? m(5) : 0,
           },
         }}>
         <Tab.Screen

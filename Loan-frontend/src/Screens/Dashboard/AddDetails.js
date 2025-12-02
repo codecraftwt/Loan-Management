@@ -357,7 +357,7 @@ export default function AddDetails({ route, navigation }) {
             </View>
 
             {/* Loan Details Section */}
-            <View style={[styles.sectionHeader, { marginTop: m(20) }]}>
+            <View style={[styles.sectionHeader, { marginTop: m(14) }]}>
               <Icon name="cash-multiple" size={22} color="#ff7900" />
               <Text style={styles.sectionTitle}>Loan Details</Text>
             </View>
@@ -559,11 +559,11 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   headerTitle: {
-    fontSize: m(20),
+    fontSize: m(18),
     fontFamily: 'Montserrat-Bold',
     color: '#ff8500',
     textAlign: 'center',
-    marginBottom: m(8),
+    marginBottom: m(6),
   },
   headerSubtitle: {
     fontSize: m(14),
@@ -604,21 +604,22 @@ const styles = StyleSheet.create({
   inputGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: m(16),
+    marginBottom: m(12),
     backgroundColor: '#f8fafc',
     borderRadius: m(12),
     borderWidth: 1,
     borderColor: '#e2e8f0',
     overflow: 'hidden',
+    paddingHorizontal: m(14),
   },
   inputIcon: {
     padding: m(12),
-    paddingHorizontal: m(16),
     backgroundColor: '#f1f5f9',
   },
   textAreaIcon: {
     alignSelf: 'flex-start',
     paddingTop: m(16),
+
   },
   input: {
     flex: 1,
@@ -638,7 +639,7 @@ const styles = StyleSheet.create({
     fontSize: m(15),
     fontFamily: 'Montserrat-Regular',
     color: '#1e293b',
-    minHeight: m(90),
+    minHeight: m(70),
     textAlignVertical: 'top',
     backgroundColor: '#f8fafc',
   },
@@ -691,7 +692,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Montserrat-SemiBold',
   },
   amountContainer: {
-    marginBottom: m(20),
+    marginBottom: m(16),
   },
   amountInputGroup: {
     flexDirection: 'row',
@@ -701,6 +702,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e2e8f0',
     overflow: 'hidden',
+    paddingHorizontal: m(12),
+
   },
   amountInput: {
     flex: 1,
@@ -787,7 +790,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: m(16),
+    padding: m(10),
     borderRadius: m(12),
     borderWidth: 1,
     borderColor: '#e2e8f0',
@@ -795,7 +798,7 @@ const styles = StyleSheet.create({
     gap: m(8),
   },
   resetButtonText: {
-    fontSize: m(15),
+    fontSize: m(14),
     fontFamily: 'Montserrat-SemiBold',
     color: '#64748b',
   },
@@ -804,13 +807,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: m(16),
+    padding: m(10),
     borderRadius: m(12),
     backgroundColor: '#ff7900',
     gap: m(10),
   },
   submitButtonText: {
-    fontSize: m(15),
+    fontSize: m(14),
     fontFamily: 'Montserrat-Bold',
     color: '#FFF',
   },
