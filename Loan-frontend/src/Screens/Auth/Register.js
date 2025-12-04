@@ -533,7 +533,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: m(16),
+    paddingVertical: Platform.OS === 'android' ? m(16) : m(0),
     gap: m(8),
   },
   registerButtonDisabled: {
@@ -546,6 +546,7 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.2)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
+    paddingVertical: Platform.OS === 'android' ? m(0) : m(16),
   },
 
   // Login Link - Orange Theme

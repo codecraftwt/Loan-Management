@@ -16,7 +16,7 @@ import {
   getLoanByAadhar,
   updateLoanAcceptanceStatus,
 } from '../../Redux/Slices/loanSlice';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useRoute } from '@react-navigation/native';
 import moment from 'moment';
 import PromptBox from '../PromptBox/Prompt';
 import Toast from 'react-native-toast-message';
@@ -27,11 +27,17 @@ import DatePicker from 'react-native-date-picker';
 
 export default function Inward({ navigation }) {
   const dispatch = useDispatch();
+  const route = useRoute();
   const user = useSelector(state => state.auth.user);
   const { loans, totalAmount, loading, error } = useSelector(
     state => state.loans,
   );
   const aadhaarNumber = user?.aadharCardNo;
+  
+  // Get highlightLoanId from route params
+  const highlightLoanId = route.params?.highlightLoanId;
+  const scrollViewRef = React.useRef(null);
+  const loanCardRefs = React.useRef({});
 
   const [isPromptVisible, setIsPromptVisible] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState(null);
@@ -184,6 +190,31 @@ export default function Inward({ navigation }) {
       }
     }, [dispatch, aadhaarNumber, debouncedSearch]),
   );
+
+  // Effect to scroll to and highlight loan when highlightLoanId is provided
+  useEffect(() => {
+    if (highlightLoanId && displayLoans?.length > 0 && scrollViewRef.current) {
+      const loanIndex = displayLoans.findIndex(loan => loan._id === highlightLoanId);
+      if (loanIndex !== -1) {
+        setTimeout(() => {
+          const cardRef = loanCardRefs.current[highlightLoanId];
+          if (cardRef && scrollViewRef.current) {
+            cardRef.measureLayout(
+              scrollViewRef.current.getInnerViewNode?.() || scrollViewRef.current,
+              (x, y) => {
+                scrollViewRef.current?.scrollTo({ y: Math.max(0, y - 100), animated: true });
+              },
+              () => {
+                // Fallback: scroll to approximate position
+                const estimatedY = loanIndex * 200;
+                scrollViewRef.current?.scrollTo({ y: Math.max(0, estimatedY - 100), animated: true });
+              }
+            );
+          }
+        }, 800);
+      }
+    }
+  }, [highlightLoanId, displayLoans]);
 
   const getStatusColor = (loan) => {
     const displayStatus = getDisplayStatus(loan);
@@ -430,6 +461,7 @@ export default function Inward({ navigation }) {
         <LoaderSkeleton />
       ) : (
         <ScrollView
+          ref={scrollViewRef}
           style={styles.loanListContainer}
           contentContainerStyle={styles.scrollContent}
           refreshControl={
@@ -450,21 +482,29 @@ export default function Inward({ navigation }) {
               const isRejected = loan?.borrowerAcceptanceStatus === 'rejected';
               const showActionButtons = !isAccepted && !isRejected;
               const displayStatus = getDisplayStatusText(loan);
+              const isHighlighted = highlightLoanId === loan._id;
 
               return (
-                <TouchableOpacity
+                <View
                   key={index}
-                  onPress={() =>
-                    navigation.navigate('PersonalLoan', {
-                      loanDetails: loan,
-                      isEdit: false,
-                    })
-                  }
-                  activeOpacity={0.9}>
-                  <View style={[
-                    styles.loanCard,
-                    isRejected && styles.rejectedLoanCard
-                  ]}>
+                  ref={ref => {
+                    if (ref && loan._id) {
+                      loanCardRefs.current[loan._id] = ref;
+                    }
+                  }}>
+                  <TouchableOpacity
+                    onPress={() =>
+                      navigation.navigate('PersonalLoan', {
+                        loanDetails: loan,
+                        isEdit: false,
+                      })
+                    }
+                    activeOpacity={0.9}>
+                    <View style={[
+                      styles.loanCard,
+                      isRejected && styles.rejectedLoanCard,
+                      isHighlighted && styles.highlightedLoanCard
+                    ]}>
                     {/* Card Header */}
                     <View style={styles.cardHeader}>
                       <View style={styles.userInfo}>
@@ -572,7 +612,8 @@ export default function Inward({ navigation }) {
                       </View>
                     )}
                   </View>
-                </TouchableOpacity>
+                  </TouchableOpacity>
+                </View>
               );
             })
           )}
@@ -843,6 +884,16 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
+  },
+  highlightedLoanCard: {
+    borderWidth: 3,
+    borderColor: '#ff6700',
+    backgroundColor: '#FFF5E6',
+    elevation: 8,
+    shadowColor: '#ff6700',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
   },
   cardHeader: {
     flexDirection: 'row',
