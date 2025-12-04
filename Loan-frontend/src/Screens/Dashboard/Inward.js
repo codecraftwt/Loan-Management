@@ -1,3 +1,4 @@
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   StyleSheet,
   Text,
@@ -5,40 +6,37 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
-  Image,
-  RefreshControl,
   Modal,
+  RefreshControl,
+  Image,
 } from 'react-native';
-import React, {useState} from 'react';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import {useDispatch, useSelector} from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   getLoanByAadhar,
   updateLoanAcceptanceStatus,
 } from '../../Redux/Slices/loanSlice';
-import {useFocusEffect} from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import moment from 'moment';
 import PromptBox from '../PromptBox/Prompt';
 import Toast from 'react-native-toast-message';
 import LoaderSkeleton from '../../Components/LoaderSkeleton';
-import {m} from 'walstar-rn-responsive';
+import { m } from 'walstar-rn-responsive';
 import Header from '../../Components/Header';
 import DatePicker from 'react-native-date-picker';
 
-export default function Inward({navigation}) {
+export default function Inward({ navigation }) {
   const dispatch = useDispatch();
   const user = useSelector(state => state.auth.user);
-  const {loans, totalAmount, loading, error} = useSelector(
+  const { loans, totalAmount, loading, error } = useSelector(
     state => state.loans,
   );
   const aadhaarNumber = user?.aadharCardNo;
-  console.log("loans from inward ====>", loans);
 
   const [isPromptVisible, setIsPromptVisible] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState(null);
   const [acceptanceStatus, setAcceptanceStatus] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [refreshing, setRefreshing] = useState(false);
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
   const [startDateFilter, setStartDateFilter] = useState(null);
   const [endDateFilter, setEndDateFilter] = useState(null);
@@ -49,11 +47,51 @@ export default function Inward({navigation}) {
   const [currentDateType, setCurrentDateType] = useState('start');
   const [tempDate, setTempDate] = useState(new Date());
 
-  const filteredLoans = loans?.filter(loan =>
-    loan?.purpose?.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  // Add debounced search state
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Remove frontend filtering - use backend filtered loans directly
+  const displayLoans = loans;
 
   const formatDate = date => moment(date).format('DD MMM, YYYY');
+
+  // Add debouncing effect for search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Fetch loans when debounced search changes
+  useEffect(() => {
+    if (aadhaarNumber) {
+      const filters = {};
+      if (debouncedSearch) {
+        filters.search = debouncedSearch;
+      }
+      dispatch(getLoanByAadhar({ aadhaarNumber, filters }));
+    }
+  }, [debouncedSearch, dispatch, aadhaarNumber]);
+
+  // Helper function to get display status
+  const getDisplayStatus = (loan) => {
+    // If borrower rejected, show "Rejected" regardless of payment status
+    if (loan?.borrowerAcceptanceStatus?.toLowerCase() === 'rejected') {
+      return 'rejected';
+    }
+    // Otherwise, show the actual payment status
+    return loan?.status;
+  };
+
+  // Helper function to get display status text
+  const getDisplayStatusText = (loan) => {
+    if (loan?.borrowerAcceptanceStatus?.toLowerCase() === 'rejected') {
+      return 'Rejected';
+    }
+    return loan?.status?.charAt(0).toUpperCase() + loan?.status?.slice(1);
+  };
 
   const handleStatusChange = (data, status) => {
     setSelectedLoan(data);
@@ -76,6 +114,13 @@ export default function Inward({navigation}) {
         position: 'top',
         text1: 'Loan approval status updated successfully',
       });
+
+      // Refresh the list after status update
+      const filters = {};
+      if (debouncedSearch) {
+        filters.search = debouncedSearch;
+      }
+      dispatch(getLoanByAadhar({ aadhaarNumber, filters }));
     } catch (error) {
       Toast.show({
         type: 'error',
@@ -91,6 +136,10 @@ export default function Inward({navigation}) {
     setMinAmount('');
     setMaxAmount('');
     setStatusFilter(null);
+    setSearchQuery(''); // Clear search query
+    setDebouncedSearch(''); // Clear debounced search
+    dispatch(getLoanByAadhar({ aadhaarNumber }));
+    setIsFilterModalVisible(false);
   };
 
   const handleSubmitFilters = async () => {
@@ -104,9 +153,11 @@ export default function Inward({navigation}) {
       minAmount: minAmount || null,
       maxAmount: maxAmount || null,
       status: statusFilter || null,
+      // Include search query in filters if it exists
+      ...(debouncedSearch && { search: debouncedSearch }),
     };
     setIsFilterModalVisible(false);
-    await dispatch(getLoanByAadhar({aadhaarNumber, filters}));
+    await dispatch(getLoanByAadhar({ aadhaarNumber, filters }));
   };
 
   const handleCancel = () => {
@@ -115,19 +166,28 @@ export default function Inward({navigation}) {
   };
 
   const onRefresh = async () => {
-    await dispatch(getLoanByAadhar({aadhaarNumber}));
+    const filters = {};
+    if (debouncedSearch) {
+      filters.search = debouncedSearch;
+    }
+    await dispatch(getLoanByAadhar({ aadhaarNumber, filters }));
   };
 
   useFocusEffect(
-    React.useCallback(() => {
+    useCallback(() => {
       if (aadhaarNumber) {
-        dispatch(getLoanByAadhar({aadhaarNumber}));
+        const filters = {};
+        if (debouncedSearch) {
+          filters.search = debouncedSearch;
+        }
+        dispatch(getLoanByAadhar({ aadhaarNumber, filters }));
       }
-    }, [dispatch, aadhaarNumber]),
+    }, [dispatch, aadhaarNumber, debouncedSearch]),
   );
 
-  const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
+  const getStatusColor = (loan) => {
+    const displayStatus = getDisplayStatus(loan);
+    switch (displayStatus?.toLowerCase()) {
       case 'accepted': return '#10B981';
       case 'rejected': return '#EF4444';
       case 'pending': return '#F59E0B';
@@ -136,8 +196,9 @@ export default function Inward({navigation}) {
     }
   };
 
-  const getStatusIcon = (status) => {
-    switch (status?.toLowerCase()) {
+  const getStatusIcon = (loan) => {
+    const displayStatus = getDisplayStatus(loan);
+    switch (displayStatus?.toLowerCase()) {
       case 'accepted': return 'check-circle';
       case 'rejected': return 'cancel';
       case 'paid': return 'check-circle';
@@ -153,6 +214,19 @@ export default function Inward({navigation}) {
     }
   };
 
+  // Filter for total amount calculation - only include pending loans that are accepted
+  const getFilteredLoansForTotal = () => {
+    return displayLoans?.filter(loan =>
+      loan?.status === 'pending' &&
+      loan?.borrowerAcceptanceStatus === 'accepted'
+    ) || [];
+  };
+
+  const calculatedTotalAmount = getFilteredLoansForTotal().reduce(
+    (sum, loan) => sum + (loan.amount || 0),
+    0
+  );
+
   return (
     <View style={styles.container}>
       <Header title="My Taken Loans" />
@@ -163,7 +237,7 @@ export default function Inward({navigation}) {
           <Icon name="search" size={20} color="#6B7280" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search by purpose..."
+            placeholder="Search by name"
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholderTextColor="#9CA3AF"
@@ -176,15 +250,15 @@ export default function Inward({navigation}) {
         </View>
       </View>
 
-      {/* Total Amount Card */}
-      {totalAmount > 0 && (
+      {/* Total Amount Card - Show only if there are pending accepted loans */}
+      {calculatedTotalAmount > 0 && (
         <View style={styles.totalAmountCard}>
           <View style={styles.totalAmountContent}>
             <Icon name="account-balance-wallet" size={24} color="#3B82F6" />
             <View style={styles.totalAmountTextContainer}>
               <Text style={styles.totalAmountLabel}>Total Pending Amount</Text>
               <Text style={styles.totalAmountValue}>
-                ₹{totalAmount?.toLocaleString('en-IN')}
+                ₹{calculatedTotalAmount?.toLocaleString('en-IN')}
               </Text>
             </View>
           </View>
@@ -207,6 +281,21 @@ export default function Inward({navigation}) {
               <TouchableOpacity onPress={() => setIsFilterModalVisible(false)}>
                 <Icon name="close" size={24} color="#6B7280" />
               </TouchableOpacity>
+            </View>
+
+            {/* Search in Filter Modal */}
+            <View style={styles.searchFilterContainer}>
+              <Text style={styles.filterLabel}>Search by Lender</Text>
+              <View style={styles.searchInputContainer}>
+                <Icon name="search" size={18} color="#6B7280" />
+                <TextInput
+                  style={styles.searchFilterInput}
+                  placeholder="Search by name, email or mobile..."
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
             </View>
 
             {/* Date Filters */}
@@ -337,7 +426,7 @@ export default function Inward({navigation}) {
       />
 
       {/* Loan List */}
-      {false ? (
+      {loading ? (
         <LoaderSkeleton />
       ) : (
         <ScrollView
@@ -347,7 +436,7 @@ export default function Inward({navigation}) {
             <RefreshControl refreshing={loading} onRefresh={onRefresh} />
           }
           showsVerticalScrollIndicator={false}>
-          {filteredLoans?.length === 0 ? (
+          {displayLoans?.length === 0 ? (
             <View style={styles.emptyState}>
               <Icon name="receipt" size={60} color="#E5E7EB" />
               <Text style={styles.emptyTitle}>No loans found</Text>
@@ -356,10 +445,11 @@ export default function Inward({navigation}) {
               </Text>
             </View>
           ) : (
-            filteredLoans?.map((loan, index) => {
+            displayLoans?.map((loan, index) => {
               const isAccepted = loan?.borrowerAcceptanceStatus === 'accepted';
               const isRejected = loan?.borrowerAcceptanceStatus === 'rejected';
               const showActionButtons = !isAccepted && !isRejected;
+              const displayStatus = getDisplayStatusText(loan);
 
               return (
                 <TouchableOpacity
@@ -371,13 +461,16 @@ export default function Inward({navigation}) {
                     })
                   }
                   activeOpacity={0.9}>
-                  <View style={styles.loanCard}>
+                  <View style={[
+                    styles.loanCard,
+                    isRejected && styles.rejectedLoanCard
+                  ]}>
                     {/* Card Header */}
                     <View style={styles.cardHeader}>
                       <View style={styles.userInfo}>
                         {user?.profileImage ? (
                           <Image
-                            source={{uri: user.profileImage}}
+                            source={{ uri: user.profileImage }}
                             style={styles.userAvatar}
                           />
                         ) : (
@@ -397,7 +490,10 @@ export default function Inward({navigation}) {
                         </View>
                       </View>
                       <View style={styles.amountContainer}>
-                        <Text style={styles.amountText}>
+                        <Text style={[
+                          styles.amountText,
+                          isRejected && styles.rejectedAmountText
+                        ]}>
                           ₹{loan.amount?.toLocaleString('en-IN')}
                         </Text>
                         <Text style={styles.amountLabel}>Loan Amount</Text>
@@ -418,11 +514,11 @@ export default function Inward({navigation}) {
                         <Text style={styles.detailLabel}>Status</Text>
                         <View style={[
                           styles.statusBadge,
-                          { backgroundColor: getStatusColor(loan.status) }
+                          { backgroundColor: getStatusColor(loan) }
                         ]}>
-                          <Icon name={getStatusIcon(loan.status)} size={12} color="#FFFFFF" />
+                          <Icon name={getStatusIcon(loan)} size={12} color="#FFFFFF" />
                           <Text style={styles.statusText}>
-                            {loan.status?.charAt(0).toUpperCase() + loan.status?.slice(1)}
+                            {displayStatus}
                           </Text>
                         </View>
                       </View>
@@ -436,7 +532,7 @@ export default function Inward({navigation}) {
                           {loan.loanStartDate ? `Started ${moment(loan.loanStartDate).fromNow()}` : 'Not started'}
                         </Text>
                       </View>
-                      
+
                       {/* Borrower Acceptance Status */}
                       <View style={[
                         styles.borrowerStatusBadge,
@@ -465,6 +561,16 @@ export default function Inward({navigation}) {
                         </TouchableOpacity>
                       </View>
                     )}
+
+                    {/* Rejection message */}
+                    {isRejected && (
+                      <View style={styles.rejectionNote}>
+                        <Icon name="info" size={14} color="#EF4444" />
+                        <Text style={styles.rejectionNoteText}>
+                          This loan has been rejected
+                        </Text>
+                      </View>
+                    )}
                   </View>
                 </TouchableOpacity>
               );
@@ -488,7 +594,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F9FAFB',
   },
-  
+
   // Search Section
   searchSection: {
     flexDirection: 'row',
@@ -862,7 +968,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     letterSpacing: m(0.5),
   },
-  
+
   // Action Buttons
   actionButtons: {
     flexDirection: 'row',

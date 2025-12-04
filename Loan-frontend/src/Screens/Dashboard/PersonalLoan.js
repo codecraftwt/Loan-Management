@@ -34,8 +34,17 @@ export default function PersonalLoan({ route, navigation }) {
 
   const formatDate = date => moment(date).format('DD MMM, YYYY');
 
+  // Get display status based on borrower's decision
+  const getDisplayStatus = () => {
+    if (loanDetails.borrowerAcceptanceStatus?.toLowerCase() === 'rejected') {
+      return 'rejected';
+    }
+    return loanDetails.status;
+  };
+
   const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
+    const displayStatus = getDisplayStatus();
+    switch (displayStatus?.toLowerCase()) {
       case 'accepted': return '#10B981';
       case 'rejected': return '#EF4444';
       case 'pending': return '#F59E0B';
@@ -45,12 +54,21 @@ export default function PersonalLoan({ route, navigation }) {
   };
 
   const getStatusIcon = (status) => {
-    switch (status?.toLowerCase()) {
+    const displayStatus = getDisplayStatus();
+    switch (displayStatus?.toLowerCase()) {
       case 'accepted': return 'check-circle';
       case 'rejected': return 'x-circle';
       case 'paid': return 'check-circle';
       default: return 'clock';
     }
+  };
+
+  // Get status display text
+  const getStatusDisplayText = () => {
+    if (loanDetails.borrowerAcceptanceStatus?.toLowerCase() === 'rejected') {
+      return 'Rejected';
+    }
+    return loanDetails.status?.charAt(0).toUpperCase() + loanDetails.status?.slice(1);
   };
 
   const loanInfo = [
@@ -61,7 +79,7 @@ export default function PersonalLoan({ route, navigation }) {
     },
     {
       label: 'Loan Status',
-      value: loanDetails.status?.charAt(0).toUpperCase() + loanDetails.status?.slice(1),
+      value: getStatusDisplayText(),
       icon: getStatusIcon(loanDetails.status),
     },
     {
@@ -145,7 +163,7 @@ export default function PersonalLoan({ route, navigation }) {
               <View style={[styles.statusBadge, { backgroundColor: getStatusColor(loanDetails.status) }]}>
                 <Icon name={getStatusIcon(loanDetails.status)} size={14} color="#FFFFFF" />
                 <Text style={styles.statusText}>
-                  {loanDetails.status?.charAt(0).toUpperCase() + loanDetails.status?.slice(1)}
+                  {getStatusDisplayText()}
                 </Text>
               </View>
               <Text style={styles.statusLabel}>Loan Status</Text>
@@ -156,9 +174,23 @@ export default function PersonalLoan({ route, navigation }) {
             <View style={styles.statusItem}>
               <View style={[
                 styles.statusBadge,
-                { backgroundColor: getStatusColor(loanDetails.borrowerAcceptanceStatus) }
+                {
+                  backgroundColor: loanDetails.borrowerAcceptanceStatus?.toLowerCase() === 'accepted'
+                    ? '#10B981'
+                    : loanDetails.borrowerAcceptanceStatus?.toLowerCase() === 'rejected'
+                      ? '#EF4444'
+                      : '#F59E0B'
+                }
               ]}>
-                <Icon name="user-check" size={14} color="#FFFFFF" />
+                <Icon
+                  name={loanDetails.borrowerAcceptanceStatus?.toLowerCase() === 'accepted'
+                    ? 'check'
+                    : loanDetails.borrowerAcceptanceStatus?.toLowerCase() === 'rejected'
+                      ? 'x'
+                      : 'clock'}
+                  size={14}
+                  color="#FFFFFF"
+                />
                 <Text style={styles.statusText}>
                   {loanDetails.borrowerAcceptanceStatus?.toUpperCase() || 'PENDING'}
                 </Text>
@@ -183,28 +215,47 @@ export default function PersonalLoan({ route, navigation }) {
           </View>
         </View>
 
-        {/* Agreement Button */}
-        <TouchableOpacity
-          style={styles.agreementButton}
-          onPress={() => setIsModalVisible(true)}>
-          <View style={styles.agreementButtonContent}>
-            <Icon name="file-text" size={24} color="#3B82F6" />
-            <View style={styles.agreementTextContainer}>
-              <Text style={styles.agreementTitle}>Loan Agreement</Text>
-              <Text style={styles.agreementSubtitle}>
-                View terms and conditions
+        {/* Show message if loan is rejected */}
+        {loanDetails.borrowerAcceptanceStatus?.toLowerCase() === 'rejected' && (
+          <View style={styles.rejectionMessage}>
+            <Icon name="alert-circle" size={24} color="#EF4444" />
+            <View style={styles.rejectionTextContainer}>
+              <Text style={styles.rejectionTitle}>Loan Rejected</Text>
+              <Text style={styles.rejectionSubtitle}>
+                This loan has been rejected and is no longer active
               </Text>
             </View>
-            <Icon name="chevron-right" size={24} color="#6B7280" />
           </View>
-        </TouchableOpacity>
+        )}
 
-        {/* Loan Summary */}
+        {/* Agreement Button - Hide if loan is rejected */}
+        {loanDetails.borrowerAcceptanceStatus?.toLowerCase() !== 'rejected' && (
+          <TouchableOpacity
+            style={styles.agreementButton}
+            onPress={() => setIsModalVisible(true)}>
+            <View style={styles.agreementButtonContent}>
+              <Icon name="file-text" size={24} color="#3B82F6" />
+              <View style={styles.agreementTextContainer}>
+                <Text style={styles.agreementTitle}>Loan Agreement</Text>
+                <Text style={styles.agreementSubtitle}>
+                  View terms and conditions
+                </Text>
+              </View>
+              <Icon name="chevron-right" size={24} color="#6B7280" />
+            </View>
+          </TouchableOpacity>
+        )}
+
+        {/* Loan Summary - Hide or modify if loan is rejected */}
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>Loan Summary</Text>
+          <Text style={styles.summaryTitle}>
+            {loanDetails.borrowerAcceptanceStatus?.toLowerCase() === 'rejected'
+              ? 'Loan Summary (Rejected)'
+              : 'Loan Summary'}
+          </Text>
           <View style={styles.summaryRow}>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Amount Taken</Text>
+              <Text style={styles.summaryLabel}>Amount {loanDetails.borrowerAcceptanceStatus?.toLowerCase() === 'rejected' ? 'Requested' : 'Taken'}</Text>
               <Text style={styles.summaryValue}>
                 ₹{loanDetails.amount?.toLocaleString('en-IN')}
               </Text>
@@ -215,9 +266,9 @@ export default function PersonalLoan({ route, navigation }) {
               <Text style={styles.summaryValue}>
                 {loanDetails.loanStartDate && loanDetails.loanEndDate
                   ? `${moment(loanDetails.loanEndDate).diff(
-                      moment(loanDetails.loanStartDate),
-                      'days'
-                    )} days`
+                    moment(loanDetails.loanStartDate),
+                    'days'
+                  )} days`
                   : 'N/A'}
               </Text>
             </View>
@@ -243,11 +294,14 @@ export default function PersonalLoan({ route, navigation }) {
         </View>
       </ScrollView>
 
-      <AgreementModal
-        isVisible={isModalVisible}
-        agreement={loanDetails.agreement}
-        onClose={() => setIsModalVisible(false)}
-      />
+      {/* Only show agreement modal if loan is not rejected */}
+      {loanDetails.borrowerAcceptanceStatus?.toLowerCase() !== 'rejected' && (
+        <AgreementModal
+          isVisible={isModalVisible}
+          agreement={loanDetails.agreement}
+          onClose={() => setIsModalVisible(false)}
+        />
+      )}
     </View>
   );
 }
@@ -264,7 +318,7 @@ const styles = StyleSheet.create({
     padding: m(16),
     paddingBottom: m(45),
   },
-  
+
   // Profile Card
   profileCard: {
     backgroundColor: '#FFFFFF',
@@ -328,7 +382,7 @@ const styles = StyleSheet.create({
     fontSize: m(14),
     color: '#6B7280',
   },
-  
+
   // Status Container
   statusContainer: {
     flexDirection: 'row',
@@ -364,7 +418,7 @@ const styles = StyleSheet.create({
     height: m(40),
     backgroundColor: '#E5E7EB',
   },
-  
+
   // Details Section
   detailsSection: {
     marginBottom: m(16),
@@ -415,7 +469,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#374151',
   },
-  
+
   // Agreement Button
   agreementButton: {
     backgroundColor: '#FFFFFF',
@@ -448,7 +502,7 @@ const styles = StyleSheet.create({
     fontSize: m(14),
     color: '#6B7280',
   },
-  
+
   // Summary Card
   summaryCard: {
     backgroundColor: '#FFFFFF',
@@ -493,7 +547,7 @@ const styles = StyleSheet.create({
     height: m(50),
     backgroundColor: '#E5E7EB',
   },
-  
+
   // Footer
   footer: {
     gap: m(8),

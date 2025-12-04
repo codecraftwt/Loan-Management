@@ -38,11 +38,35 @@ const Outward = ({ navigation }) => {
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [currentDateType, setCurrentDateType] = useState('start');
   const [tempDate, setTempDate] = useState(new Date());
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  const filteredLoans = lenderLoans?.filter(loan =>
-    loan?.name?.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  // Use lenderLoans directly (now filtered by backend)
+  const displayLoans = lenderLoans;
+
   const formatDate = date => moment(date).format('DD-MM-YYYY');
+
+  // Add debouncing effect for search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Fetch loans when debounced search changes
+  useEffect(() => {
+    const filters = {};
+    if (debouncedSearch) {
+      filters.search = debouncedSearch;
+    }
+    dispatch(getLoanByLender(filters));
+  }, [debouncedSearch, dispatch]);
+
+  // Also fetch loans on initial mount
+  useEffect(() => {
+    dispatch(getLoanByLender());
+  }, [dispatch]);
 
   const handleConfirm = useCallback(async () => {
     const newStatus = selectedLoan?.status === 'pending' ? 'paid' : 'pending';
@@ -56,6 +80,12 @@ const Outward = ({ navigation }) => {
         position: 'top',
         text1: 'Loan status updated successfully',
       });
+      // Refresh the list after status update
+      const filters = {};
+      if (debouncedSearch) {
+        filters.search = debouncedSearch;
+      }
+      dispatch(getLoanByLender(filters));
     } catch (err) {
       Toast.show({
         type: 'error',
@@ -65,7 +95,7 @@ const Outward = ({ navigation }) => {
     } finally {
       setIsPromptVisible(false);
     }
-  }, [dispatch, selectedLoan]);
+  }, [dispatch, selectedLoan, debouncedSearch]);
 
   const handleClearFilters = () => {
     setStartDateFilter(null);
@@ -73,6 +103,8 @@ const Outward = ({ navigation }) => {
     setMinAmount('');
     setMaxAmount('');
     setStatusFilter(null);
+    setSearchQuery(''); // Clear search query
+    setDebouncedSearch(''); // Clear debounced search
     dispatch(getLoanByLender());
     setIsFilterModalVisible(false);
   };
@@ -88,6 +120,8 @@ const Outward = ({ navigation }) => {
       minAmount: minAmount || null,
       maxAmount: maxAmount || null,
       status: statusFilter || null,
+      // Include search query in filters if it exists
+      ...(debouncedSearch && { search: debouncedSearch }),
     };
     setIsFilterModalVisible(false);
     await dispatch(getLoanByLender(filters));
@@ -99,12 +133,12 @@ const Outward = ({ navigation }) => {
   }, []);
 
   const onRefresh = useCallback(async () => {
-    await dispatch(getLoanByLender());
-  }, [dispatch]);
-
-  useEffect(() => {
-    dispatch(getLoanByLender());
-  }, [dispatch]);
+    const filters = {};
+    if (debouncedSearch) {
+      filters.search = debouncedSearch;
+    }
+    await dispatch(getLoanByLender(filters));
+  }, [dispatch, debouncedSearch]);
 
   return (
     <KeyboardAvoidingView
@@ -153,6 +187,21 @@ const Outward = ({ navigation }) => {
               <TouchableOpacity onPress={() => setIsFilterModalVisible(false)}>
                 <Icon name="close" size={24} color="#6B7280" />
               </TouchableOpacity>
+            </View>
+
+            {/* Search in Filter Modal */}
+            <View style={styles.searchFilterContainer}>
+              <Text style={styles.filterLabel}>Search by Name</Text>
+              <View style={styles.searchInputContainer}>
+                <Icon name="search" size={18} color="#6B7280" />
+                <TextInput
+                  style={styles.searchFilterInput}
+                  placeholder="Enter name to search..."
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
             </View>
 
             {/* Date Filters */}
@@ -293,7 +342,7 @@ const Outward = ({ navigation }) => {
             <RefreshControl refreshing={loading} onRefresh={onRefresh} />
           }
           showsVerticalScrollIndicator={false}>
-          {filteredLoans?.length === 0 ? (
+          {displayLoans?.length === 0 ? (
             <View style={styles.emptyState}>
               <Icon name="inventory" size={60} color="#E5E7EB" />
               <Text style={styles.emptyTitle}>No loans found</Text>
@@ -302,7 +351,7 @@ const Outward = ({ navigation }) => {
               </Text>
             </View>
           ) : (
-            filteredLoans?.map((loan, index) => (
+            displayLoans?.map((loan, index) => (
               <TouchableOpacity
                 key={index}
                 onPress={() =>
