@@ -8,11 +8,12 @@ import {
   RefreshControl,
   Animated,
   Easing,
+  Platform,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
 import Ionicons from 'react-native-vector-icons/Ionicons'; import LinearGradient from 'react-native-linear-gradient';
-import { getLoanStats } from '../../Redux/Slices/loanSlice';
+import { getLoanStats, getRecentActivities } from '../../Redux/Slices/loanSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import useFetchUserFromStorage from '../../Redux/hooks/useFetchUserFromStorage';
 import { m } from 'walstar-rn-responsive';
@@ -24,6 +25,7 @@ export default function Home() {
 
   const user = useSelector(state => state.auth.user);
   const loanCount = useSelector(state => state.loans.loanStats);
+  const recentActivities = useSelector(state => state.loans.recentActivities || []);
 
   const [refreshing, setRefreshing] = useState(false);
   const [showAllActivity, setShowAllActivity] = useState(false);
@@ -66,6 +68,7 @@ export default function Home() {
   useFocusEffect(
     React.useCallback(() => {
       dispatch(getLoanStats(aadhaarNumber));
+      dispatch(getRecentActivities(5));
 
       // Reset animations
       fadeAnim.setValue(0);
@@ -98,7 +101,10 @@ export default function Home() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await dispatch(getLoanStats(aadhaarNumber));
+    await Promise.all([
+      dispatch(getLoanStats(aadhaarNumber)),
+      dispatch(getRecentActivities(5)),
+    ]);
     setRefreshing(false);
   };
 
@@ -108,38 +114,50 @@ export default function Home() {
     100
   );
 
-  const activities = [
-    {
-      type: 'given',
-      title: 'Loan Given',
-      time: '2 hours ago',
-      amount: '₹5,000',
-      icon: 'arrow-up-right',
-      color: '#ff6700',
-      gradient: ['#ff8a00', '#ff6700'],
-      person: 'John Doe',
-    },
-    {
-      type: 'repaid',
-      title: 'Loan Repaid',
-      time: '1 day ago',
-      amount: '₹3,000',
-      icon: 'check-circle',
-      color: '#27ae60',
-      gradient: ['#27ae60', '#2ecc71'],
-      person: 'You',
-    },
-    {
-      type: 'taken',
-      title: 'Loan Taken',
-      time: '2 days ago',
-      amount: '₹7,500',
-      icon: 'arrow-down-left',
-      color: '#34495e',
-      gradient: ['#2c3e50', '#34495e'],
-      person: 'Sarah Smith',
-    },
-  ];
+  // Helper function to map activity type to UI properties
+  const getActivityProperties = (activity) => {
+    const isLoanGiven = activity.type === 'loan_given';
+    const shortMessage = activity.shortMessage || '';
+    
+    let icon = 'clock';
+    let color = '#34495e';
+    let gradient = ['#2c3e50', '#34495e'];
+    
+    if (shortMessage.includes('Repaid') || shortMessage.includes('Paid')) {
+      icon = 'check-circle';
+      color = '#27ae60';
+      gradient = ['#27ae60', '#2ecc71'];
+    } else if (shortMessage.includes('Accepted')) {
+      icon = 'check-circle';
+      color = '#10B981';
+      gradient = ['#10B981', '#34D399'];
+    } else if (shortMessage.includes('Rejected')) {
+      icon = 'x-circle';
+      color = '#EF4444';
+      gradient = ['#EF4444', '#F87171'];
+    } else if (isLoanGiven) {
+      icon = 'arrow-up-right';
+      color = '#ff6700';
+      gradient = ['#ff8a00', '#ff6700'];
+    } else {
+      icon = 'arrow-down-left';
+      color = '#34495e';
+      gradient = ['#2c3e50', '#34495e'];
+    }
+    
+    return { icon, color, gradient };
+  };
+
+  // Handle activity card press
+  const handleActivityPress = (activity) => {
+    if (activity.type === 'loan_given') {
+      // Navigate to Given (Outward) tab screen
+      navigation.navigate('Given', { highlightLoanId: activity.loanId });
+    } else if (activity.type === 'loan_taken') {
+      // Navigate to Taken (Inward) tab screen
+      navigation.navigate('Taken', { highlightLoanId: activity.loanId });
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -200,31 +218,35 @@ export default function Home() {
               colors={['#1a1a1a', '#2c3e50', '#34495e', '#2c3e50']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              style={styles.premiumContent}>
+              // style={styles.premiumContent}
+              >
+              <View style={styles.premiumContent}>
 
-              {/* Decorative Elements */}
-              <View style={styles.premiumOrnamentTop} />
-              <View style={styles.premiumOrnamentBottom} />
 
-              <View style={styles.premiumIcon}>
-                <LinearGradient
-                  colors={['#ffd900e8', '#ffed4edc', '#ffd900d9']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.premiumIconBackground}
-                >
-                  <Ionicons name="sparkles-sharp" color="white" size={26} />
-                </LinearGradient>
-                <View style={styles.iconGlow} />
-              </View>
+                {/* Decorative Elements */}
+                <View style={styles.premiumOrnamentTop} />
+                <View style={styles.premiumOrnamentBottom} />
 
-              <View style={styles.premiumText}>
-                <Text style={styles.premiumTitle}>Go Premium</Text>
-                <Text style={styles.premiumSubtitle}>Unlock advanced features & insights</Text>
-              </View>
+                <View style={styles.premiumIcon}>
+                  <LinearGradient
+                    colors={['#ffd900e8', '#ffed4edc', '#ffd900d9']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.premiumIconBackground}
+                  >
+                    <Ionicons name="sparkles-sharp" color="white" size={26} />
+                  </LinearGradient>
+                  <View style={styles.iconGlow} />
+                </View>
 
-              <View style={styles.premiumArrow}>
-                <Icon name="chevron-right" size={24} color="white" />
+                <View style={styles.premiumText}>
+                  <Text style={styles.premiumTitle}>Go Premium</Text>
+                  <Text style={styles.premiumSubtitle}>Unlock advanced features & insights</Text>
+                </View>
+
+                <View style={styles.premiumArrow}>
+                  <Icon name="chevron-right" size={24} color="white" />
+                </View>
               </View>
             </LinearGradient>
           </TouchableOpacity>
@@ -453,58 +475,69 @@ export default function Home() {
             </TouchableOpacity>
           </View>
 
-          {(showAllActivity ? activities : activities.slice(0, 1)).map(
-            (activity, index) => (
-              <Animated.View
-                key={index}
-                style={[
-                  styles.activityItem,
-                  {
-                    transform: [{ translateX: slideUpAnim }],
-                    opacity: fadeAnim
-                  }
-                ]}>
+          {(showAllActivity ? recentActivities : recentActivities.slice(0, 1)).map(
+            (activity, index) => {
+              const activityProps = getActivityProperties(activity);
+              return (
+                <TouchableOpacity
+                  key={activity.loanId || index}
+                  activeOpacity={0.7}
+                  onPress={() => handleActivityPress(activity)}>
+                  <Animated.View
+                    style={[
+                      styles.activityItem,
+                      {
+                        transform: [{ translateX: slideUpAnim }],
+                        opacity: fadeAnim
+                      }
+                    ]}>
 
-                {/* Timeline Indicator */}
-                <View style={styles.timeline}>
-                  <View style={[styles.timelineDot, { backgroundColor: activity.color }]} />
-                  {index < 2 && <View style={styles.timelineLine} />}
-                </View>
+                    {/* Timeline Indicator */}
+                    <View style={styles.timeline}>
+                      <View style={[styles.timelineDot, { backgroundColor: activityProps.color }]} />
+                      {index < (showAllActivity ? recentActivities.length - 1 : 0) && <View style={styles.timelineLine} />}
+                    </View>
 
-                {/* Activity Content */}
-                <View style={styles.activityContent}>
-                  <View style={styles.activityHeader}>
-                    <LinearGradient
-                      colors={activity.gradient}
-                      style={styles.activityIcon}
-                    >
-                      <Icon name={activity.icon} size={16} color="#fff" />
-                    </LinearGradient>
-                    <View style={styles.activityText}>
-                      <Text style={styles.activityTitle}>{activity.title}</Text>
-                      <Text style={styles.activityPerson}>{activity.person}</Text>
-                    </View>
-                    <View style={styles.activityAmountContainer}>
-                      <Text style={[styles.activityAmount, { color: activity.color }]}>
-                        {activity.amount}
-                      </Text>
-                    </View>
-                  </View>
+                    {/* Activity Content */}
+                    <View style={styles.activityContent}>
+                      <View style={styles.activityHeader}>
+                        <LinearGradient
+                          colors={activityProps.gradient}
+                          style={styles.activityIcon}
+                        >
+                          <Icon name={activityProps.icon} size={16} color="#fff" />
+                        </LinearGradient>
+                        <View style={styles.activityText}>
+                          <Text style={styles.activityTitle}>{activity.shortMessage || 'Activity'}</Text>
+                          <Text style={styles.activityPerson} numberOfLines={2}>
+                            {activity.message || ''}
+                          </Text>
+                        </View>
+                        <View style={styles.activityAmountContainer}>
+                          <Text style={[styles.activityAmount, { color: activityProps.color }]}>
+                            ₹{activity.amount?.toLocaleString('en-IN') || '0'}
+                          </Text>
+                        </View>
+                      </View>
 
-                  <View style={styles.activityFooter}>
-                    <View style={styles.timeContainer}>
-                      <Icon name="clock" size={12} color="#7f8c8d" />
-                      <Text style={styles.activityTime}>{activity.time}</Text>
+                      <View style={styles.activityFooter}>
+                        <View style={styles.timeContainer}>
+                          <Icon name="clock" size={12} color="#7f8c8d" />
+                          <Text style={styles.activityTime}>
+                            {activity.relativeTime || 'Recently'}
+                          </Text>
+                        </View>
+                        <View style={[styles.statusBadge, { backgroundColor: `${activityProps.color}15` }]}>
+                          <Text style={[styles.statusText, { color: activityProps.color }]}>
+                            {activity.type === 'loan_given' ? 'Given' : 'Taken'}
+                          </Text>
+                        </View>
+                      </View>
                     </View>
-                    <View style={[styles.statusBadge, { backgroundColor: `${activity.color}15` }]}>
-                      <Text style={[styles.statusText, { color: activity.color }]}>
-                        {activity.type.charAt(0).toUpperCase() + activity.type.slice(1)}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              </Animated.View>
-            ))}
+                  </Animated.View>
+                </TouchableOpacity>
+              );
+            })}
         </Animated.View>
       </ScrollView>
     </View>
@@ -579,7 +612,7 @@ const styles = StyleSheet.create({
   premiumSection: {
     marginHorizontal: m(16),
     marginVertical: m(16),
-    borderRadius: m(24),
+    borderRadius: m(25),
     overflow: 'hidden',
     shadowColor: '#ffd700',
     shadowOffset: { width: 0, height: 12 },
@@ -592,7 +625,8 @@ const styles = StyleSheet.create({
   premiumContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: m(28),
+    padding: Platform.OS === 'android' ? m(28) : m(10),
+    paddingVertical: Platform.OS === 'android' ? m(0) : m(26),
     position: 'relative',
     overflow: 'hidden',
   },
@@ -674,18 +708,6 @@ const styles = StyleSheet.create({
   },
   premiumArrow: {
     zIndex: 2,
-  },
-  arrowCircle: {
-    width: m(36),
-    height: m(36),
-    borderRadius: m(20),
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#ffd700',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.8,
-    shadowRadius: 8,
-    elevation: 6,
   },
   // Stats Section
   statsSection: {
@@ -829,16 +851,17 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   progressGradient: {
-    padding: m(24),
-    flexDirection: 'row',
-    alignItems: 'center',
+    padding: m(20),
+    flexDirection: Platform.OS === 'ios' ? 'column' : 'row',
+    alignItems: Platform.OS === 'ios' ? 'flex-start' : 'center',
     position: 'relative',
     overflow: 'hidden',
   },
   // Progress Circle
   progressCircleContainer: {
     alignItems: 'center',
-    marginRight: m(20),
+    marginRight: Platform.OS === 'ios' ? 0 : m(20),
+    marginBottom: Platform.OS === 'ios' ? m(16) : 0,
     position: 'relative',
   },
   progressCircleBackground: {

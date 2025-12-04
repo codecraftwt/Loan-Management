@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
   },
   headerBar: {
     height: m(90),
-    paddingTop: m(20),
+    paddingTop: Platform.OS === 'android' ? m(20) : m(0),
     borderBottomEndRadius: m(25),
     borderBottomStartRadius: m(25),
     overflow: 'hidden',
@@ -130,31 +130,26 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: m(20),
   },
-
   leftContainer: {
     width: m(50),
     justifyContent: 'center',
     alignItems: 'flex-start',
   },
-
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-
   rightContainer: {
     width: m(50),
     justifyContent: 'center',
     alignItems: 'flex-end',
   },
-
   backButton: {
     padding: m(8),
     borderRadius: m(20),
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
   },
-
   editButton: {
     padding: m(8),
     borderRadius: m(20),
@@ -162,7 +157,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-
   headerText: {
     color: '#ffffff',
     fontSize: m(20),
@@ -174,7 +168,6 @@ const styles = StyleSheet.create({
     textShadowRadius: m(8),
     marginBottom: m(10),
   },
-
   logo: {
     width: m(65),
     height: m(32),

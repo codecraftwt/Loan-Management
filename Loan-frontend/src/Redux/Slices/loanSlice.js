@@ -9,6 +9,7 @@ const initialState = {
   myLoans: [],
   lenderTotalAmount: 0,
   loanStats: [],
+  recentActivities: [],
   loading: true,
   error: null,
   updateError: null,
@@ -216,6 +217,24 @@ export const getLoanStats = createAsyncThunk(
   },
 );
 
+export const getRecentActivities = createAsyncThunk(
+  'loans/getRecentActivities',
+  async (limit = 5, { rejectWithValue }) => {
+    try {
+      const response = await instance.get('loan/recent-activities', {
+        params: { limit },
+      });
+
+      return response.data;
+    } catch (error) {
+      console.log(error.response?.data || error.message);
+      return rejectWithValue(
+        error.response?.data || error.message || 'Unknown error',
+      );
+    }
+  },
+);
+
 const loanSlice = createSlice({
   name: 'loans',
   initialState: {},
@@ -385,6 +404,25 @@ const loanSlice = createSlice({
           action.payload ||
           action.error?.message ||
           'Error fetching loan stats';
+      })
+
+      // Handling getRecentActivities
+      .addCase(getRecentActivities.pending, state => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getRecentActivities.fulfilled, (state, action) => {
+        state.loading = false;
+        state.recentActivities = action.payload.data || [];
+        state.error = null;
+      })
+      .addCase(getRecentActivities.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          action.payload ||
+          action.error?.message ||
+          'Error fetching recent activities';
+        state.recentActivities = [];
       });
   },
 });
