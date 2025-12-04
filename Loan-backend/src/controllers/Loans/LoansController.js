@@ -14,11 +14,27 @@ const AddLoan = async (req, res) => {
     const lenderId = req.user.id;
     const LoanData = req.body;
 
-    const user = await User.findOne({
+    // First, find the lender (current user) to get their Aadhaar number
+    const lender = await User.findById(lenderId);
+    if (!lender) {
+      return res.status(404).json({
+        message: "Lender not found",
+      });
+    }
+
+    // Check if the lender is trying to give loan to themselves
+    if (lender.aadharCardNo === LoanData.aadharCardNo) {
+      return res.status(400).json({
+        message: "You cannot give a loan to yourself",
+      });
+    }
+
+    // Find the borrower by Aadhaar number
+    const borrower = await User.findOne({
       aadharCardNo: LoanData.aadharCardNo,
     });
 
-    if (!user) {
+    if (!borrower) {
       return res.status(404).json({
         message: "User with the provided Aadhar number does not exist",
       });
@@ -41,6 +57,7 @@ const AddLoan = async (req, res) => {
       ...LoanData,
       lenderId,
       aadhaarNumber: LoanData.aadharCardNo,
+      borrowerId: borrower._id, // Add borrower ID to loan document
     });
 
     const agreementText = generateLoanAgreement(createLoan, req.user);
@@ -50,13 +67,16 @@ const AddLoan = async (req, res) => {
 
     await sendLoanUpdateNotification(LoanData.aadharCardNo, LoanData);
 
-    return res.status(201).json(createLoan);
+    return res.status(201).json({
+      message: "Loan created successfully",
+      data: createLoan,
+    });
   } catch (error) {
     if (error.name === "ValidationError") {
       const errorMessages = Object.values(error.errors).map(
         (err) => err.message
       );
-      return res.status.status(400).json({
+      return res.status(400).json({
         message: "Validation error",
         errors: errorMessages,
       });
@@ -285,13 +305,18 @@ const updateLoanAcceptanceStatus = async (req, res) => {
 const getLoansByLender = async (req, res) => {
   try {
     const lenderId = req.user.id;
-    let { page, limit, startDate, endDate, status, minAmount, maxAmount } =
+    let { page, limit, startDate, endDate, status, minAmount, maxAmount, search } =
       req.query;
 
     minAmount = minAmount ? Number(minAmount) : undefined;
     maxAmount = maxAmount ? Number(maxAmount) : undefined;
 
     const query = { lenderId };
+
+    // Add name search if provided
+    if (search) {
+      query.name = { $regex: search, $options: 'i' }; // Case-insensitive search
+    }
 
     if (startDate) query.loanStartDate = { $gte: new Date(startDate) };
     if (endDate)
@@ -412,6 +437,7 @@ const getLoanByAadhaar = async (req, res) => {
     status,
     minAmount,
     maxAmount,
+    search, // New search query parameter
   } = req.query;
 
   if (!aadhaarNumber) {
@@ -432,23 +458,59 @@ const getLoanByAadhaar = async (req, res) => {
       if (maxAmount !== undefined) query.amount.$lte = Number(maxAmount);
     }
 
+    // Create options for paginateQuery
+    const options = {
+      sort: { createdAt: -1 },
+      populate: {
+        path: "lenderId",
+        select: "userName email mobileNo",
+      }
+    };
+
+    // If search parameter exists, add a match query
+    if (search) {
+      options.populate.match = {
+        $or: [
+          { userName: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } },
+          { mobileNo: { $regex: search, $options: 'i' } }
+        ]
+      };
+    }
+
     // Pagination and options
     const { data: loans, pagination } = await paginateQuery(
       Loan,
       query,
       page,
       limit,
-      {
-        sort: { createdAt: -1 },
-        populate: { path: "lenderId", select: "userName email mobileNo" },
-      }
+      options
     );
 
-    if (loans.length === 0) {
+    // Filter loans based on search
+    let filteredLoans = loans;
+    if (search) {
+      filteredLoans = loans.filter(loan => {
+        // Only include loans that have a lender AND match the search
+        if (!loan.lenderId) return false; // Exclude loans with null lender
+
+        // Check if lender matches search criteria
+        const lender = loan.lenderId;
+        const searchLower = search.toLowerCase();
+
+        return (
+          lender.userName?.toLowerCase().includes(searchLower) ||
+          lender.email?.toLowerCase().includes(searchLower) ||
+          lender.mobileNo?.includes(search)
+        );
+      });
+    }
+
+    if (filteredLoans.length === 0) {
       return res.status(404).json({ message: "No loans found" });
     }
 
-    const pendingLoans = loans.filter(
+    const pendingLoans = filteredLoans.filter(
       (loan) =>
         loan.status === "pending" &&
         loan.borrowerAcceptanceStatus === "accepted"
@@ -461,8 +523,12 @@ const getLoanByAadhaar = async (req, res) => {
     return res.status(200).json({
       message: "Loan data fetched successfully",
       totalAmount,
-      data: loans,
-      pagination,
+      data: filteredLoans,
+      pagination: {
+        ...pagination,
+        totalDocuments: filteredLoans.length,
+        totalPages: Math.ceil(filteredLoans.length / (limit || 10))
+      },
     });
   } catch (error) {
     console.error("Error:", error);
@@ -511,6 +577,161 @@ const getLoanStats = async (req, res) => {
   }
 };
 
+const getRecentActivities = async (req, res) => {
+  try {
+    const userId = req.user.id; // Get the logged-in user ID
+    const limit = parseInt(req.query.limit) || 5; // Default to 5 activities
+
+    // Helper function to format relative time
+    const getRelativeTime = (timestamp) => {
+      const now = new Date();
+      const past = new Date(timestamp);
+      const diffInSeconds = Math.floor((now - past) / 1000);
+
+      if (diffInSeconds < 60) {
+        return `${diffInSeconds} second${diffInSeconds !== 1 ? 's' : ''} ago`;
+      }
+
+      const diffInMinutes = Math.floor(diffInSeconds / 60);
+      if (diffInMinutes < 60) {
+        return `${diffInMinutes} minute${diffInMinutes !== 1 ? 's' : ''} ago`;
+      }
+
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      if (diffInHours < 24) {
+        return `${diffInHours} hour${diffInHours !== 1 ? 's' : ''} ago`;
+      }
+
+      const diffInDays = Math.floor(diffInHours / 24);
+      if (diffInDays < 30) {
+        return `${diffInDays} day${diffInDays !== 1 ? 's' : ''} ago`;
+      }
+
+      const diffInMonths = Math.floor(diffInDays / 30);
+      if (diffInMonths < 12) {
+        return `${diffInMonths} month${diffInMonths !== 1 ? 's' : ''} ago`;
+      }
+
+      const diffInYears = Math.floor(diffInMonths / 12);
+      return `${diffInYears} year${diffInYears !== 1 ? 's' : ''} ago`;
+    };
+
+    // 1. Get user's loans as lender (loans given) - get all and sort by most recent updates
+    const loansGiven = await Loan.find({ lenderId: userId })
+      .sort({ updatedAt: -1 })
+      .limit(limit * 2) // Get more to filter
+      .select('name amount status borrowerAcceptanceStatus updatedAt')
+      .lean();
+
+    // 2. Get user's loans as borrower (loans taken) using aadhaarNumber
+    const user = await User.findById(userId).select('aadharCardNo');
+    const loansTaken = user?.aadharCardNo ?
+      await Loan.find({ aadhaarNumber: user.aadharCardNo })
+        .sort({ updatedAt: -1 })
+        .limit(limit * 2) // Get more to filter
+        .select('name amount status borrowerAcceptanceStatus updatedAt lenderId')
+        .populate('lenderId', 'userName')
+        .lean() : [];
+
+    // Format activities
+    const activities = [];
+
+    // Format loans given activities
+    loansGiven.forEach(loan => {
+      let shortMessage = '';
+      let message = '';
+
+      if (loan.status === 'paid') {
+        shortMessage = 'Loan Repaid';
+        message = `Loan of ₹${loan.amount} given to ${loan.name} has been marked as paid`;
+      } else if (loan.borrowerAcceptanceStatus === 'accepted') {
+        shortMessage = 'Loan Accepted';
+        message = `${loan.name} accepted your loan of ₹${loan.amount}`;
+      } else if (loan.borrowerAcceptanceStatus === 'rejected') {
+        shortMessage = 'Loan Rejected';
+        message = `${loan.name} rejected your loan of ₹${loan.amount}`;
+      } else if (loan.status === 'pending' && loan.borrowerAcceptanceStatus === 'pending') {
+        shortMessage = 'Loan Given';
+        message = `You gave a loan of ₹${loan.amount} to ${loan.name}`;
+      } else if (loan.status === 'pending' && loan.borrowerAcceptanceStatus === 'accepted') {
+        shortMessage = 'Loan Active';
+        message = `Loan of ₹${loan.amount} to ${loan.name} is active`;
+      }
+
+      // Only add if we have a message
+      if (shortMessage && message) {
+        activities.push({
+          type: 'loan_given',
+          shortMessage,
+          message,
+          loanId: loan._id,
+          loanName: loan.name,
+          amount: loan.amount,
+          timestamp: loan.updatedAt,
+          relativeTime: getRelativeTime(loan.updatedAt)
+        });
+      }
+    });
+
+    // Format loans taken activities
+    loansTaken.forEach(loan => {
+      let shortMessage = '';
+      let message = '';
+
+      const lenderName = loan.lenderId?.userName || 'Lender';
+
+      if (loan.status === 'paid') {
+        shortMessage = 'Loan Paid';
+        message = `You paid ₹${loan.amount} to ${lenderName}`;
+      } else if (loan.borrowerAcceptanceStatus === 'accepted') {
+        shortMessage = 'Loan Accepted';
+        message = `You accepted loan of ₹${loan.amount} from ${lenderName}`;
+      } else if (loan.borrowerAcceptanceStatus === 'rejected') {
+        shortMessage = 'Loan Rejected';
+        message = `You rejected loan of ₹${loan.amount} from ${lenderName}`;
+      } else if (loan.status === 'pending' && loan.borrowerAcceptanceStatus === 'pending') {
+        shortMessage = 'Loan Requested';
+        message = `You requested a loan of ₹${loan.amount} from ${lenderName}`;
+      } else if (loan.status === 'pending' && loan.borrowerAcceptanceStatus === 'accepted') {
+        shortMessage = 'Loan Active';
+        message = `Your loan of ₹${loan.amount} from ${lenderName} is active`;
+      }
+
+      // Only add if we have a message
+      if (shortMessage && message) {
+        activities.push({
+          type: 'loan_taken',
+          shortMessage,
+          message,
+          loanId: loan._id,
+          loanName: loan.name,
+          amount: loan.amount,
+          timestamp: loan.updatedAt,
+          relativeTime: getRelativeTime(loan.updatedAt)
+        });
+      }
+    });
+
+    // Sort all activities by timestamp (most recent first)
+    activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    // Take only the most recent ones based on limit
+    const recentActivities = activities.slice(0, limit);
+
+    return res.status(200).json({
+      message: "Recent activities fetched successfully",
+      count: recentActivities.length,
+      data: recentActivities,
+    });
+  } catch (error) {
+    console.error("Error fetching recent activities:", error);
+    return res.status(500).json({
+      message: "Server error. Please try again later.",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   AddLoan,
   ShowAllLoan,
@@ -523,4 +744,5 @@ module.exports = {
   updateLoanStatus,
   getLoanStats,
   updateLoanAcceptanceStatus,
+  getRecentActivities,
 };

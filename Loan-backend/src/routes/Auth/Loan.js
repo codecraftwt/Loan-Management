@@ -11,9 +11,13 @@ const {
   getLoansById,
   getLoanStats,
   updateLoanAcceptanceStatus,
+  getRecentActivities,
 } = require("../../controllers/Loans/LoansController");
 const authenticateUser = require("../../middlewares/authenticateUser");
 const router = express.Router();
+
+//recent activity
+router.get('/recent-activities', authenticateUser, getRecentActivities);
 
 router.post("/add-loan", authenticateUser, AddLoan);
 
