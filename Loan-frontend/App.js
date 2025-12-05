@@ -7,15 +7,15 @@ import Toast from 'react-native-toast-message';
 import {toastConfig} from './src/Utils/toastConfig';
 import {Provider} from 'react-redux';
 import store from './src/Redux/store/store';
-import PushNotification from 'react-native-push-notification';
-import {setupFirebaseNotifications} from './src/firebase/firebase';
-
+// NOTE: Push notification setup is temporarily disabled while resolving
+// iOS NativeEventEmitter issues with notification libraries.
+// import PushNotification from 'react-native-push-notification';
+// import {setupFirebaseNotifications} from './src/firebase/firebase';
 export default function App() {
   useEffect(() => {
     // Setup Firebase push notifications when the app starts
-    setupFirebaseNotifications();
+    // setupFirebaseNotifications();
   }, []);
-
   return (
     <Provider store={store}>
       <PaperProvider>
@@ -23,7 +23,6 @@ export default function App() {
           {/* Set the StatusBar color here */}
           <StatusBar barStyle="dark-content" backgroundColor="#FAFAFA" />
           <Navigation />
-
           <Toast config = {toastConfig} />
         </NavigationContainer>
       </PaperProvider>

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,286 +6,442 @@ import {
   TouchableOpacity,
   StyleSheet,
   StatusBar,
-  Image,
+  Platform,
+  KeyboardAvoidingView,
+  ScrollView,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {useDispatch, useSelector} from 'react-redux';
-import {login} from '../../Redux/Slices/authslice';
+import LinearGradient from 'react-native-linear-gradient';
+import { useDispatch, useSelector } from 'react-redux';
+import { login } from '../../Redux/Slices/authslice';
 import Toast from 'react-native-toast-message';
-import {m} from 'walstar-rn-responsive';
+import { m } from 'walstar-rn-responsive';
 
-export default function LoginScreen({navigation}) {
+export default function LoginScreen({ navigation }) {
   const [mobileNumber, setMobileNumber] = useState('');
   const [password, setPassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [mobileError, setMobileError] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
-  // Get loading and error states from Redux store
-  const {isLoading, error} = useSelector(state => state.auth || {});
+  const { isLoading, error } = useSelector(state => state.auth || {});
   const dispatch = useDispatch();
 
   const validateMobile = text => {
     const numericText = text.replace(/[^0-9]/g, '');
     if (numericText.length <= 10) {
       setMobileNumber(numericText);
-      setMobileError(
-        numericText.length < 10 ? 'Mobile number must be 10 digits.' : '',
-      );
+      setMobileError('');
     }
   };
 
   const validatePassword = text => {
     setPassword(text);
-    setPasswordError(
-      text.length < 6 ? 'Password must be at least 6 characters.' : '',
-    );
-  };
-
-  const isFormValid = () => {
-    return mobileNumber.length === 10 && password.length >= 6;
+    setPasswordError('');
   };
 
   const handleLogin = () => {
-    if (isFormValid()) {
-      // Dispatch login action and handle response states
-      dispatch(login({emailOrMobile: mobileNumber, password}))
-        .unwrap() // Automatically resolves on success or throws on failure
-        .then(response => {
-          // On success, show a success toast and navigate to BottomNavigation
-          // Toast.show({
-          //   type: 'success',
-          //   position: 'top',
-          //   text1: 'Login Successful',
-          // });
-          navigation.navigate('BottomNavigation');
-        })
-        .catch(error => {
-          // Log the error for debugging (useful during development)
-          console.error('Error ->', error);
+    let hasError = false;
+    let localMobileError = '';
+    let localPasswordError = '';
 
-          // Show an error toast based on the structure of the error
-          const errorMessage =
-            error ||
-            error.message ||
-            'Invalid credentials or network error. Please try again.';
-
-          Toast.show({
-            type: 'error',
-            position: 'top',
-            text1: errorMessage,
-          });
-        });
-    } else {
-      alert('Please fill in all fields correctly.');
+    if (!mobileNumber) {
+      localMobileError = 'Mobile number is required.';
+      hasError = true;
+    } else if (mobileNumber.length !== 10) {
+      localMobileError = 'Mobile number must be 10 digits.';
+      hasError = true;
     }
+
+    if (!password) {
+      localPasswordError = 'Password is required.';
+      hasError = true;
+    } else if (password.length < 6) {
+      localPasswordError = 'Password must be at least 6 characters.';
+      hasError = true;
+    }
+
+    setMobileError(localMobileError);
+    setPasswordError(localPasswordError);
+
+    if (hasError) {
+      return;
+    }
+
+    dispatch(login({ emailOrMobile: mobileNumber, password }))
+      .unwrap()
+      .then(() => {
+        navigation.navigate('BottomNavigation');
+      })
+      .catch(error => {
+        console.error('Error ->', error);
+        const errorMessage =
+          error ||
+          error.message ||
+          'Invalid credentials or network error. Please try again.';
+
+        Toast.show({
+          type: 'error',
+          position: 'top',
+          text1: errorMessage,
+        });
+      });
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <Text style={styles.welcomeText}>Welcome to LoanHub</Text>
-      <Text style={styles.headerText}>Login to Continue</Text>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
+      <StatusBar barStyle="light-content" backgroundColor="#ff6700" />
 
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Mobile Number"
-          keyboardType="phone-pad"
-          placeholderTextColor="#666666"
-          value={mobileNumber}
-          onChangeText={validateMobile}
-        />
-        {mobileError ? (
-          <Text style={styles.mobileErrorText}>{mobileError}</Text>
-        ) : null}
+      {/* ScrollView to prevent keyboard hiding content */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled">
 
-        <View style={styles.passwordContainer}>
-          <TextInput
-            style={styles.passwordInput}
-            placeholder="Password"
-            secureTextEntry={!passwordVisible}
-            placeholderTextColor="#666666"
-            value={password}
-            onChangeText={validatePassword}
-          />
+        <View style={styles.headerContent}>
+          <View style={styles.logoContainer}>
+            <Text style={styles.appName}>LoanHub</Text>
+          </View>
+          <Text style={styles.tagline}>Smart Loan Management</Text>
+        </View>
+        {/* Login Form Card - EXACTLY your design */}
+        <View style={styles.formCard}>
+          <Text style={styles.formTitle}>Welcome Back</Text>
+          <Text style={styles.formSubtitle}>Sign in to manage your loans</Text>
+
+          {/* Mobile Input */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Mobile Number</Text>
+            <View style={[
+              styles.inputContainer,
+              mobileError ? styles.inputError : {},
+              mobileNumber.length === 10 ? styles.inputSuccess : {}
+            ]}>
+              <Ionicons
+                name="call-outline"
+                size={20}
+                color={mobileError ? '#FF4444' : mobileNumber.length === 10 ? '#28a745' : '#ff7900'}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Enter 10 digit number"
+                keyboardType="phone-pad"
+                placeholderTextColor="#999"
+                value={mobileNumber}
+                onChangeText={validateMobile}
+                maxLength={10}
+              />
+              {mobileNumber.length === 10 && (
+                <Ionicons name="checkmark-circle" size={20} color="#28a745" />
+              )}
+            </View>
+            {mobileError ? (
+              <Text style={styles.errorText}>{mobileError}</Text>
+            ) : null}
+          </View>
+
+          {/* Password Input */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Password</Text>
+            <View style={[
+              styles.inputContainer,
+              passwordError ? styles.inputError : {}
+            ]}>
+              <Ionicons
+                name="lock-closed-outline"
+                size={20}
+                color={passwordError ? '#FF4444' : '#ff7900'}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={[styles.input, { flex: 1 }]}
+                placeholder="Enter your password"
+                secureTextEntry={!passwordVisible}
+                placeholderTextColor="#999"
+                value={password}
+                onChangeText={validatePassword}
+              />
+              <TouchableOpacity
+                onPress={() => setPasswordVisible(!passwordVisible)}
+                style={styles.eyeButton}>
+                <Ionicons
+                  name={passwordVisible ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color="#ff7900"
+                />
+              </TouchableOpacity>
+            </View>
+            {passwordError ? (
+              <Text style={styles.errorText}>{passwordError}</Text>
+            ) : null}
+          </View>
+
+          {/* Login Button with Orange Gradient */}
           <TouchableOpacity
-            onPress={() => setPasswordVisible(!passwordVisible)}>
-            <Ionicons
-              name={passwordVisible ? 'eye-off-outline' : 'eye-outline'}
-              size={25}
-              color={'#f26fb7'}
-              style={styles.icon}
-            />
+            style={[
+              styles.loginButtonContainer,
+              (!mobileNumber || !password || isLoading) && styles.loginButtonDisabled
+            ]}
+            onPress={handleLogin}
+            disabled={!mobileNumber || !password || isLoading}>
+            <LinearGradient
+              colors={['#ff6700', '#ff7900', '#ff8500']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.loginButtonGradient}>
+              <Text style={styles.loginButtonText}>
+                {isLoading ? 'Logging in...' : 'Sign In'}
+              </Text>
+              {!isLoading && (
+                <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
+
+          {/* Divider */}
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* Alternative Actions */}
+          <TouchableOpacity
+            // style={styles.registerButton}
+            onPress={() => navigation.navigate('Register')}>
+            <View
+              style={styles.registerButtonGradient}>
+              <Text style={styles.registerButtonText}>Create New Account</Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Forgot Password */}
+          <TouchableOpacity
+            style={styles.forgotPasswordButton}
+            onPress={() => navigation.navigate('ForgotPassword')}>
+            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
         </View>
-        {passwordError ? (
-          <Text style={styles.errorText}>{passwordError}</Text>
-        ) : null}
-      </View>
 
-      <TouchableOpacity
-        style={[styles.loginButton, {opacity: isFormValid() ? 1 : 0.5}]}
-        onPress={handleLogin}
-        disabled={!isFormValid() || isLoading} // Disable button while logging in
-      >
-        <Text style={styles.loginButtonText}>
-          {isLoading ? 'Logging in...' : 'Login'}
-        </Text>
-      </TouchableOpacity>
-
-      <View style={styles.linksContainer}>
-        {/* Sign in with Google Button */}
-        {/* <TouchableOpacity style={styles.googleButton}>
-          <Image
-            source={{
-              uri: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTw7JaI54p1i3v3WAoqEiQE1Jduquut71TkNSKSTNoixuv9DQQGdj61Ex_10nv6NM5wIhY&usqp=CAU',
-            }}
-            style={styles.googleIcon}
-          />
-          <Text style={styles.googleButtonText}>Sign in with Google</Text>
-        </TouchableOpacity> */}
-
-        <Text
-          style={styles.link}
-          onPress={() => navigation.navigate('ForgotPassword')}>
-          Forgot Password?
-        </Text>
-        <Text
-          style={styles.link}
-          onPress={() => navigation.navigate('Register')}>
-          Create an Account
-        </Text>
-      </View>
-    </View>
+        {/* Footer */}
+        {/* <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            By signing in, you agree to our{' '}
+            <Text style={styles.footerLink}>Terms & Conditions</Text> and{' '}
+            <Text style={styles.footerLink}>Privacy Policy</Text>
+          </Text>
+        </View> */}
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
-    padding: m(20),
-    justifyContent: 'center',
+    backgroundColor: '#f8f8f8',
   },
-  welcomeText: {
-    fontSize: m(22),
-    color: '#b80266',
-    fontFamily: 'Montserrat-Bold',
+
+  // Orange Gradient Header (Matching your header) - EXACTLY YOUR DESIGN
+  headerContent: {
+    borderBottomLeftRadius: m(25),
+    borderBottomRightRadius: m(25),
+    paddingTop: Platform.OS === 'ios' ? m(50) : m(40),
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    marginTop: m(10),
+  },
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: m(12),
+  },
+  appName: {
+    fontSize: m(32),
+    fontWeight: '700',
+    color: '#ff6700',
+  },
+  tagline: {
+    fontSize: m(16),
+    color: '#ff6700',
     textAlign: 'center',
-    marginBottom: m(18),
+    fontStyle: 'italic',
   },
-  headerText: {
-    fontSize: m(18),
+
+  // ScrollView to prevent keyboard hiding
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: m(40),
+    backgroundColor: '#f8f8f8',
+  },
+
+  // Form Card - EXACTLY YOUR DESIGN
+  formCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: m(20),
+    padding: m(24),
+    marginTop: m(30),
+    marginHorizontal: m(20),
+    borderWidth: 1,
+    borderColor: '#FFEDD5',
+    elevation: 8,
+    shadowColor: '#ff6700',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+  },
+  formTitle: {
+    fontSize: m(24),
+    fontWeight: '700',
     color: '#333',
-    fontFamily: 'Montserrat-Bold',
-    marginBottom: m(34),
+    marginBottom: m(4),
     textAlign: 'center',
+  },
+  formSubtitle: {
+    fontSize: m(14),
+    color: '#666',
+    marginBottom: m(24),
+    textAlign: 'center',
+  },
+
+  // Input Groups - EXACTLY YOUR DESIGN
+  inputGroup: {
+    marginBottom: m(20),
+  },
+  inputLabel: {
+    fontSize: m(14),
+    fontWeight: '500',
+    color: '#555',
+    marginBottom: m(8),
   },
   inputContainer: {
-    marginBottom: m(10),
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF9F0',
+    borderRadius: m(12),
+    borderWidth: 1,
+    borderColor: '#FFEDD5',
+    paddingHorizontal: m(16),
+    height: m(56),
+  },
+  inputError: {
+    borderColor: '#FF4444',
+  },
+  inputSuccess: {
+    borderColor: '#28a745',
+  },
+  inputIcon: {
+    marginRight: m(12),
   },
   input: {
-    height: m(50),
-    borderColor: '#f26fb7',
-    borderWidth: m(1),
-    borderRadius: m(8),
-    marginBottom: m(20),
-    paddingHorizontal: m(16),
-    fontSize: m(14),
-    fontFamily: 'Poppins-Regular',
-    color: '#333333',
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: m(2)},
-    shadowOpacity: 0.1,
-    shadowRadius: m(4),
-  },
-  passwordContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderColor: '#f26fb7',
-    borderWidth: m(1),
-    borderRadius: m(8),
-    height: m(50),
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: m(2)},
-    shadowOpacity: 0.1,
-    shadowRadius: m(4),
-  },
-  passwordInput: {
     flex: 1,
-    paddingHorizontal: m(16),
-    fontSize: m(14),
-    fontFamily: 'Poppins-Regular',
-    color: '#333333',
-  },
-  icon: {
-    paddingHorizontal: m(10),
-  },
-  loginButton: {
-    backgroundColor: '#b80266',
-    borderRadius: m(8),
-    height: m(50),
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: m(10),
-    elevation: m(4),
-  },
-  loginButtonText: {
-    color: '#FFFFFF',
     fontSize: m(16),
-    fontFamily: 'Poppins-Bold',
+    color: '#333',
+    padding: 0,
   },
-  linksContainer: {
-    alignItems: 'center',
-    marginTop: m(20),
-  },
-  link: {
-    color: '#b80266',
-    fontSize: m(14),
-    fontFamily: 'Poppins-SemiBold',
-    textAlign: 'center',
-    marginTop: m(10),
-  },
-  googleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderColor: '#999999',
-    borderWidth: m(1),
-    borderRadius: m(8),
-    height: m(55),
-    justifyContent: 'center',
-    marginTop: m(5),
-    paddingHorizontal: m(80),
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: m(2)},
-    shadowOpacity: 0.1,
-    shadowRadius: m(4),
-    marginBottom: m(20),
-  },
-  googleIcon: {
-    width: m(24),
-    height: m(24),
-    marginRight: m(20),
-  },
-  googleButtonText: {
-    fontSize: m(14),
-    fontFamily: 'Poppins-SemiBold',
+  eyeButton: {
+    padding: m(4),
   },
   errorText: {
-    color: 'red',
     fontSize: m(12),
-    fontFamily: 'Poppins-Regular',
-    marginBottom: m(10),
-    marginTop: m(5),
+    color: '#FF4444',
+    marginTop: m(4),
+    marginLeft: m(4),
   },
-  mobileErrorText: {
-    color: 'red',
-    marginTop: m(-20),
-    paddingBlock: m(5),
-    fontSize: m(12),
-    fontFamily: 'Poppins-Regular',
+
+  // Login Button with Gradient - EXACTLY YOUR DESIGN
+  loginButtonContainer: {
+    borderRadius: m(12),
+    marginTop: m(8),
+    overflow: 'hidden',
+    elevation: 4,
+    shadowColor: '#ff6700',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
   },
+  loginButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Platform.OS === 'android' ? m(16) : m(0),
+    gap: m(8),
+  },
+  loginButtonDisabled: {
+    opacity: 0.5,
+  },
+  loginButtonText: {
+    fontSize: m(16),
+    fontWeight: '600',
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+    paddingVertical: Platform.OS === 'android' ? m(0) : m(16),
+
+  },
+
+  // Divider - EXACTLY YOUR DESIGN
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: m(24),
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#FFEDD5',
+  },
+  dividerText: {
+    fontSize: m(14),
+    color: '#ff7900',
+    marginHorizontal: m(16),
+    fontWeight: '500',
+  },
+
+  // Alternative Buttons - EXACTLY YOUR DESIGN
+  registerButtonGradient: {
+    paddingVertical: m(8),
+    alignItems: 'center',
+  },
+  registerButtonText: {
+    fontSize: m(16),
+    fontWeight: '600',
+    color: '#ff6700',
+  },
+
+  // Forgot Password - EXACTLY YOUR DESIGN
+  forgotPasswordButton: {
+    alignItems: 'center',
+    paddingVertical: m(8),
+  },
+  forgotPasswordText: {
+    fontSize: m(14),
+    color: '#ff7900',
+    fontWeight: '500',
+  },
+
+  // Footer - EXACTLY YOUR DESIGN
+  // footer: {
+  //   marginTop: 'auto',
+  //   marginBottom: m(20),
+  //   paddingHorizontal: m(20),
+  // },
+  // footerText: {
+  //   fontSize: m(12),
+  //   color: '#888',
+  //   textAlign: 'center',
+  //   lineHeight: m(18),
+  // },
+  // footerLink: {
+  //   color: '#ff6700',
+  //   fontWeight: '500',
+  // },
 });
