@@ -1,4 +1,4 @@
-import {createSlice, createAsyncThunk} from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import instance from '../../Utils/AxiosInstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -9,6 +9,7 @@ const initialState = {
   myLoans: [],
   lenderTotalAmount: 0,
   loanStats: [],
+  recentActivities: [],
   loading: true,
   error: null,
   updateError: null,
@@ -23,29 +24,27 @@ const initialState = {
 
 export const getLoanByAadhar = createAsyncThunk(
   'loans/getLoanByAadhar',
-  async ({aadhaarNumber, filters = {}}, {rejectWithValue}) => {
+  async ({ aadhaarNumber, filters = {} }, { rejectWithValue }) => {
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
         return rejectWithValue('User is not authenticated');
       }
 
-      console.log('Aadhar Number', aadhaarNumber);
-
       const params = {
         aadhaarNumber,
         page: filters.page || 1,
         limit: filters.limit || 10,
-        ...(filters.startDate && {startDate: filters.startDate}),
-        ...(filters.endDate && {endDate: filters.endDate}),
-        ...(filters.status && {status: filters.status}),
-        ...(filters.minAmount && {minAmount: filters.minAmount}),
-        ...(filters.maxAmount && {maxAmount: filters.maxAmount}),
+        ...(filters.startDate && { startDate: filters.startDate }),
+        ...(filters.endDate && { endDate: filters.endDate }),
+        ...(filters.status && { status: filters.status }),
+        ...(filters.minAmount && { minAmount: filters.minAmount }),
+        ...(filters.maxAmount && { maxAmount: filters.maxAmount }),
+        // Add search parameter for backend filtering
+        ...(filters.search && { search: filters.search }),
       };
 
-      const response = await instance.get('loan/get-loan-by-aadhar', {params});
-
-      console.log('response----=------------>', response);
+      const response = await instance.get('loan/get-loan-by-aadhar', { params });
 
       if (response.status === 404) {
         return {
@@ -71,7 +70,7 @@ export const getLoanByAadhar = createAsyncThunk(
 
 export const getLoanByLender = createAsyncThunk(
   'loans/getLoanByLender',
-  async (filters = {}, {rejectWithValue}) => {
+  async (filters = {}, { rejectWithValue }) => {
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
@@ -81,17 +80,18 @@ export const getLoanByLender = createAsyncThunk(
       const params = {
         page: filters.page || 1,
         limit: filters.limit || 10,
-        ...(filters.startDate && {startDate: filters.startDate}),
-        ...(filters.endDate && {endDate: filters.endDate}),
-        ...(filters.status && {status: filters.status}),
-        ...(filters.minAmount && {minAmount: filters.minAmount}),
-        ...(filters.maxAmount && {maxAmount: filters.maxAmount}),
+        ...(filters.startDate && { startDate: filters.startDate }),
+        ...(filters.endDate && { endDate: filters.endDate }),
+        ...(filters.status && { status: filters.status }),
+        ...(filters.minAmount && { minAmount: filters.minAmount }),
+        ...(filters.maxAmount && { maxAmount: filters.maxAmount }),
+        // Add search parameter for backend filtering
+        ...(filters.search && { search: filters.search }),
       };
+
       const response = await instance.get('loan/get-loan-by-lender', {
         params,
       });
-
-      console.log('response', response);
 
       if (response.status === 404) {
         return {
@@ -117,12 +117,16 @@ export const getLoanByLender = createAsyncThunk(
 
 export const createLoan = createAsyncThunk(
   'loans/createLoan',
-  async (loanData, {rejectWithValue}) => {
+  async (loanData, { rejectWithValue }) => {
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
         return rejectWithValue('User is not authenticated');
       }
+
+      // Debug: Log the exact data being sent to API
+      console.log('createLoan - Data being sent to backend:', JSON.stringify(loanData, null, 2));
+      console.log('createLoan - Aadhar Card No:', loanData.aadharCardNo);
 
       const response = await instance.post('loan/add-loan', loanData, {
         headers: {
@@ -133,7 +137,9 @@ export const createLoan = createAsyncThunk(
       return response.data;
     } catch (error) {
       if (error.response) {
-        console.error('API Error:', error.response.data);
+        console.error('API Error Response:', error.response.data);
+        console.error('API Error Status:', error.response.status);
+        console.error('API Error Headers:', error.response.headers);
         return rejectWithValue(error.response.data || 'Failed to create loan');
       }
       console.error('Error:', error.message);
@@ -144,12 +150,12 @@ export const createLoan = createAsyncThunk(
 
 export const updateLoanStatus = createAsyncThunk(
   'loans/updateLoanStatus',
-  async ({loanId, status}, {rejectWithValue}) => {
+  async ({ loanId, status }, { rejectWithValue }) => {
     try {
       console.log('API call for update status', loanId);
       const response = await instance.patch(
         `loan/update-loan-status/${loanId}`,
-        {status},
+        { status },
       );
       console.log(response.data);
       return response.data;
@@ -162,12 +168,12 @@ export const updateLoanStatus = createAsyncThunk(
 
 export const updateLoanAcceptanceStatus = createAsyncThunk(
   'loans/updateLoanAcceptanceStatus',
-  async ({loanId, status}, {rejectWithValue}) => {
+  async ({ loanId, status }, { rejectWithValue }) => {
     try {
       console.log('API call for update status', loanId);
       const response = await instance.patch(
         `loan/update-loan-acceptance-status/${loanId}`,
-        {status},
+        { status },
       );
       console.log(response.data);
       return response.data;
@@ -180,7 +186,7 @@ export const updateLoanAcceptanceStatus = createAsyncThunk(
 
 export const updateLoan = createAsyncThunk(
   'loans/updateLoan',
-  async (loanData, {rejectWithValue}) => {
+  async (loanData, { rejectWithValue }) => {
     try {
       const response = await instance.patch(`loan/${loanData.id}`, loanData);
       return response.data.data;
@@ -195,10 +201,28 @@ export const updateLoan = createAsyncThunk(
 
 export const getLoanStats = createAsyncThunk(
   'loans/getLoanStats',
-  async (aadhaarNumber, {rejectWithValue}) => {
+  async (aadhaarNumber, { rejectWithValue }) => {
     try {
       const response = await instance.get('loan/loan-stats', {
-        params: {aadhaarNumber},
+        params: { aadhaarNumber },
+      });
+
+      return response.data;
+    } catch (error) {
+      console.log(error.response?.data || error.message);
+      return rejectWithValue(
+        error.response?.data || error.message || 'Unknown error',
+      );
+    }
+  },
+);
+
+export const getRecentActivities = createAsyncThunk(
+  'loans/getRecentActivities',
+  async (limit = 5, { rejectWithValue }) => {
+    try {
+      const response = await instance.get('loan/recent-activities', {
+        params: { limit },
       });
 
       return response.data;
@@ -305,11 +329,11 @@ const loanSlice = createSlice({
         state.updateError = null;
       })
       .addCase(updateLoanStatus.rejected, (state, action) => {
-        state.loading = false;        
+        state.loading = false;
         const errorMessage = action.payload.replace(/^.*loanEndDate:\s*/, '')
         console.log(errorMessage, "message <--------------")
         state.updateError =
-        errorMessage.replace(/^.*loanEndDate:\s*/, '') || "Failed to update"
+          errorMessage.replace(/^.*loanEndDate:\s*/, '') || "Failed to update"
       })
 
       //update updateLoanAcceptanceStatus
@@ -380,6 +404,25 @@ const loanSlice = createSlice({
           action.payload ||
           action.error?.message ||
           'Error fetching loan stats';
+      })
+
+      // Handling getRecentActivities
+      .addCase(getRecentActivities.pending, state => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getRecentActivities.fulfilled, (state, action) => {
+        state.loading = false;
+        state.recentActivities = action.payload.data || [];
+        state.error = null;
+      })
+      .addCase(getRecentActivities.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          action.payload ||
+          action.error?.message ||
+          'Error fetching recent activities';
+        state.recentActivities = [];
       });
   },
 });
