@@ -268,7 +268,7 @@ export default function Inward({ navigation }) {
           <Icon name="search" size={20} color="#6B7280" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search by name"
+            placeholder="Search by name..."
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholderTextColor="#9CA3AF"

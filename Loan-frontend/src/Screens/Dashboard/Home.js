@@ -218,8 +218,8 @@ export default function Home() {
               colors={['#1a1a1a', '#2c3e50', '#34495e', '#2c3e50']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              // style={styles.premiumContent}
-              >
+            // style={styles.premiumContent}
+            >
               <View style={styles.premiumContent}>
 
 
@@ -335,14 +335,16 @@ export default function Home() {
                 value: loanCount?.loansGivenCount || 0,
                 label: 'Given',
                 gradient: ['#BBDEFB', '#90CAF9'],
-                textColor: '#1565C0'
+                textColor: '#1565C0',
+                tabName: 'Given' // Use the exact tab name from BottomNavigation.js
               },
               {
                 icon: 'arrow-down-circle',
                 value: loanCount?.loansTakenCount || 0,
                 label: 'Taken',
                 gradient: ['#FFE0B2', '#FFCC80'],
-                textColor: '#E65100'
+                textColor: '#E65100',
+                tabName: 'Taken' // Use the exact tab name from BottomNavigation.js
               },
               {
                 icon: 'check-circle',
@@ -358,17 +360,34 @@ export default function Home() {
                 gradient: ['#E1BEE7', '#e6d6e9ff'],
                 textColor: '#7B1FA2'
               },
-            ].map((stat, index) => (
-              <View key={stat.label} style={styles.statItem}>
-                <LinearGradient
-                  colors={stat.gradient}
-                  style={styles.statIcon}
+            ].map((stat, index) => {
+              const StatContainer = stat.tabName ? TouchableOpacity : View;
+              const statProps = stat.tabName
+                ? {
+                  onPress: () => {
+                    // Use jumpTo to navigate between tabs
+                    navigation.jumpTo(stat.tabName);
+                  },
+                  activeOpacity: 0.7
+                }
+                : {};
+
+              return (
+                <StatContainer
+                  key={stat.label}
+                  style={styles.statItem}
+                  {...statProps}
                 >
-                  <Text style={[styles.statValue, { color: stat.textColor }]}>{stat.value}</Text>
-                </LinearGradient>
-                <Text style={styles.statLabel}>{stat.label}</Text>
-              </View>
-            ))}
+                  <LinearGradient
+                    colors={stat.gradient}
+                    style={styles.statIcon}
+                  >
+                    <Text style={[styles.statValue, { color: stat.textColor }]}>{stat.value}</Text>
+                  </LinearGradient>
+                  <Text style={styles.statLabel}>{stat.label}</Text>
+                </StatContainer>
+              );
+            })}
           </View>
         </View>
         {/* Progress Card */}
