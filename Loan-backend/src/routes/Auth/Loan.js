@@ -15,11 +15,13 @@ const {
 } = require("../../controllers/Loans/LoansController");
 const authenticateUser = require("../../middlewares/authenticateUser");
 const router = express.Router();
+const checkSubscription = require("../../middlewares/subscriptionCheck");
 
 //recent activity
 router.get('/recent-activities', authenticateUser, getRecentActivities);
 
-router.post("/add-loan", authenticateUser, AddLoan);
+// router.post("/add-loan", authenticateUser, AddLoan);
+router.post("/add-loan", authenticateUser, checkSubscription, AddLoan);
 
 router.get("/get-loan-by-lender", authenticateUser, getLoansByLender);
 

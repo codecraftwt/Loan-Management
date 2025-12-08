@@ -53,7 +53,21 @@ const canUserCreateLoan = async (userId) => {
       };
     }
 
-    // User can create unlimited loans as long as subscription is active
+    // Check loan limits if subscription has limits
+    if (subscription && subscription.maxLoans > 0) {
+      const loanCount = await Loan.countDocuments({
+        lenderId: userId,
+        createdAt: { $gte: userData.startDate }
+      });
+
+      if (loanCount >= subscription.maxLoans) {
+        return {
+          canCreate: false,
+          message: `You have reached the maximum loan limit (${subscription.maxLoans}) for your current plan. Please upgrade your subscription.`
+        };
+      }
+    }
+
     return {
       canCreate: true,
       subscription: subscription
@@ -176,14 +190,26 @@ const canCreateMoreLoans = async (userId) => {
       };
     }
 
-    // User can create unlimited loans as long as subscription is active
+    // If maxLoans is 0, unlimited loans allowed
+    if (subscriptionDetails.subscription.maxLoans === 0) {
+      return {
+        canCreate: true,
+        remainingLoans: 'unlimited',
+        message: "Unlimited loans available"
+      };
+    }
+
     const loansCreated = await countUserLoansInSubscription(userId);
+    const remainingLoans = Math.max(0, subscriptionDetails.subscription.maxLoans - loansCreated);
 
     return {
-      canCreate: true,
-      remainingLoans: 'unlimited',
+      canCreate: remainingLoans > 0,
+      remainingLoans: remainingLoans,
+      totalAllowed: subscriptionDetails.subscription.maxLoans,
       usedLoans: loansCreated,
-      message: "Unlimited loans available while subscription is active"
+      message: remainingLoans > 0
+        ? `You can create ${remainingLoans} more loan(s)`
+        : `You have reached your limit of ${subscriptionDetails.subscription.maxLoans} loans`
     };
   } catch (error) {
     console.error("Error checking loan creation ability:", error);

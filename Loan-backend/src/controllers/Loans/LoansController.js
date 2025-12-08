@@ -1,27 +1,91 @@
-const express = require("express");
 const Loan = require("../../models/Loan");
-const Subscription = require("../../models/Subscription");
 const User = require("../../models/User");
 const {
   sendLoanStatusNotification,
   sendLoanUpdateNotification,
 } = require("../../services/notificationService");
-const { generateLoanAgreement } = require("../../services/agreementService");
 const paginateQuery = require("../../utils/pagination");
+
+// Add this import at the top
+const Subscription = require("../../models/Subscription");
+const { canUserCreateLoan } = require("../../services/subscriptionService");
 
 const AddLoan = async (req, res) => {
   try {
     const lenderId = req.user.id;
     const LoanData = req.body;
 
-    // First, find the lender (current user) to get their Aadhaar number
-    const lender = await User.findById(lenderId);
+    // Check if user has active subscription
+    const { canCreate, message } = await canUserCreateLoan(lenderId);
+
+    if (!canCreate) {
+      return res.status(403).json({
+        message: message
+      });
+    }
+
+    // First, find the lender (current user) to get their subscription status
+    const lender = await User.findById(lenderId).select('hasActiveSubscription subscriptionPlan subscriptionExpiry');
+
     if (!lender) {
       return res.status(404).json({
+        success: false,
         message: "Lender not found",
       });
     }
 
+    // Check subscription - Middleware will handle this, but double-check
+    if (!lender.hasActiveSubscription) {
+      return res.status(403).json({
+        success: false,
+        message: "Active subscription is required to create loans",
+        code: "SUBSCRIPTION_REQUIRED",
+        redirectTo: "/subscription/plans"
+      });
+    }
+
+    // Check subscription expiry
+    if (lender.subscriptionExpiry && new Date() > lender.subscriptionExpiry) {
+      return res.status(403).json({
+        success: false,
+        message: "Your subscription has expired. Please renew to create loans.",
+        code: "SUBSCRIPTION_EXPIRED"
+      });
+    }
+
+    // Get active subscription to check loan limit
+    const activeSubscription = await Subscription.findOne({
+      user: lenderId,
+      status: 'active'
+    });
+
+    if (activeSubscription) {
+      // Check current loan count
+      const currentLoanCount = await Loan.countDocuments({
+        lenderId: lenderId,
+        status: 'pending'
+      });
+
+      if (currentLoanCount >= activeSubscription.features.maxLoans) {
+        return res.status(403).json({
+          success: false,
+          message: `Loan limit reached. Your ${lender.subscriptionPlan} plan allows maximum ${activeSubscription.features.maxLoans} active loans.`,
+          code: "LOAN_LIMIT_EXCEEDED"
+        });
+      }
+
+      // Check loan amount limit
+      if (activeSubscription.features.maxLoanAmount &&
+        LoanData.amount > activeSubscription.features.maxLoanAmount) {
+        return res.status(403).json({
+          success: false,
+          message: `Loan amount exceeds your plan limit of ₹${activeSubscription.features.maxLoanAmount}`,
+          code: "LOAN_AMOUNT_EXCEEDED"
+        });
+      }
+    }
+
+    // Rest of your existing code...
     // Check if the lender is trying to give loan to themselves
     if (lender.aadharCardNo === LoanData.aadharCardNo) {
       return res.status(400).json({
@@ -40,24 +104,11 @@ const AddLoan = async (req, res) => {
       });
     }
 
-    // Check if the user has an active subscription
-    // const activeSubscription = await Subscription.findOne({
-    //   user: lenderId,
-    //   isActive: true,
-    //   subscriptionExpiry: { $gte: new Date() },
-    // });
-
-    // if (!activeSubscription) {
-    //   return res.status(403).json({
-    //     message: "You must have an active subscription to add a loan",
-    //   });
-    // }
-
     const createLoan = new Loan({
       ...LoanData,
       lenderId,
       aadhaarNumber: LoanData.aadharCardNo,
-      borrowerId: borrower._id, // Add borrower ID to loan document
+      borrowerId: borrower._id,
     });
 
     const agreementText = generateLoanAgreement(createLoan, req.user);
@@ -68,6 +119,7 @@ const AddLoan = async (req, res) => {
     await sendLoanUpdateNotification(LoanData.aadharCardNo, LoanData);
 
     return res.status(201).json({
+      success: true,
       message: "Loan created successfully",
       data: createLoan,
     });
@@ -90,6 +142,77 @@ const AddLoan = async (req, res) => {
     });
   }
 };
+
+// ... rest of your existing code ...
+
+// const AddLoan = async (req, res) => {
+//   try {
+//     const lenderId = req.user.id;
+//     const LoanData = req.body;
+
+//     // First, find the lender (current user) to get their Aadhaar number
+//     const lender = await User.findById(lenderId);
+//     if (!lender) {
+//       return res.status(404).json({
+//         message: "Lender not found",
+//       });
+//     }
+
+//     // Check if the lender is trying to give loan to themselves
+//     if (lender.aadharCardNo === LoanData.aadharCardNo) {
+//       return res.status(400).json({
+//         message: "You cannot give a loan to yourself",
+//       });
+//     }
+
+//     // Find the borrower by Aadhaar number
+//     const borrower = await User.findOne({
+//       aadharCardNo: LoanData.aadharCardNo,
+//     });
+
+//     if (!borrower) {
+//       return res.status(404).json({
+//         message: "User with the provided Aadhar number does not exist",
+//       });
+//     }
+
+//     const createLoan = new Loan({
+//       ...LoanData,
+//       lenderId,
+//       aadhaarNumber: LoanData.aadharCardNo,
+//       borrowerId: borrower._id,
+//     });
+
+//     const agreementText = generateLoanAgreement(createLoan, req.user);
+//     createLoan.agreement = agreementText;
+
+//     await createLoan.save();
+
+//     await sendLoanUpdateNotification(LoanData.aadharCardNo, LoanData);
+
+//     return res.status(201).json({
+//       message: "Loan created successfully",
+//       data: createLoan,
+//     });
+//   } catch (error) {
+//     if (error.name === "ValidationError") {
+//       const errorMessages = Object.values(error.errors).map(
+//         (err) => err.message
+//       );
+//       return res.status(400).json({
+//         message: "Validation error",
+//         errors: errorMessages,
+//       });
+//     }
+
+//     console.log(error);
+
+//     return res.status(500).json({
+//       message: "Server Error",
+//       error: error.message,
+//     });
+//   }
+// };
 
 const ShowAllLoan = async (req, res) => {
   try {
@@ -277,31 +400,6 @@ const updateLoanAcceptanceStatus = async (req, res) => {
   }
 };
 
-// const getLoansByLender = async (req, res) => {
-//   try {
-//     const lenderId = req.user.id; // Extracting lender's ID from the JWT token
-
-//     const loans = await Loan.find({ lenderId }).sort({ createdAt: -1 });
-
-//     if (!loans || loans.length === 0) {
-//       return res
-//         .status(404)
-//         .json({ message: "No loans found for this lender" });
-//     }
-
-//     return res.status(200).json({
-//       message: "Loans fetched successfully",
-//       data: loans,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     return res.status(500).json({
-//       message: "Server Error",
-//       error: error.message,
-//     });
-//   }
-// };
-
 const getLoansByLender = async (req, res) => {
   try {
     const lenderId = req.user.id;
@@ -378,55 +476,6 @@ const getLoansById = async (req, res) => {
   }
 };
 
-// const getLoanByAadhaar = async (req, res) => {
-//   const { aadhaarNumber } = req.query;
-
-//   // Validate Aadhaar Number
-//   if (!aadhaarNumber) {
-//     return res.status(400).json({ message: "Aadhaar number is required" });
-//   }
-
-//   try {
-//     // Fetch loans based on Aadhaar number
-//     const loans = await Loan.find({ aadhaarNumber })
-//       .sort({ createdAt: -1 })
-//       .populate("lenderId", "userName email mobileNo")
-//       .exec();
-
-//     // Check if loans are found
-//     if (loans.length === 0) {
-//       return res
-//         .status(404)
-//         .json({ message: "No loans found for this Aadhaar number" });
-//     }
-
-//     const pendingLoans = loans.filter(
-//       (loan) =>
-//         loan.status === "pending" &&
-//         loan.borrowerAcceptanceStatus === "accepted"
-//     );
-
-//     // Calculate total amount for only pending loans
-//     const totalAmount = pendingLoans.reduce(
-//       (sum, loan) => sum + loan.amount,
-//       0
-//     );
-
-//     // Return the response with loan data, total amount, and user's profile image
-//     return res.status(200).json({
-//       message: "Loan data fetched successfully",
-//       totalAmount,
-//       data: loans,
-//     });
-//   } catch (error) {
-//     console.error("Error fetching loan data by Aadhaar:", error);
-//     return res.status(500).json({
-//       message: "Server error. Please try again later.",
-//       error: error.message,
-//     });
-//   }
-// };
-
 const getLoanByAadhaar = async (req, res) => {
   const {
     aadhaarNumber,
@@ -437,7 +486,7 @@ const getLoanByAadhaar = async (req, res) => {
     status,
     minAmount,
     maxAmount,
-    search, // New search query parameter
+    search,
   } = req.query;
 
   if (!aadhaarNumber) {

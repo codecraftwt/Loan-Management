@@ -29,7 +29,16 @@ const checkSubscription = async (req, res, next) => {
       });
     }
 
-    // User can create unlimited loans as long as subscription is active
+    // Check loan limit
+    const loanCount = await req.app.locals.loanCount; // You'll need to set this in your route
+
+    if (loanCount >= activeSubscription.features.maxLoans) {
+      return res.status(403).json({
+        message: `Loan limit reached. Your plan allows maximum ${activeSubscription.features.maxLoans} loans`,
+        code: 'LOAN_LIMIT_EXCEEDED'
+      });
+    }
+
     // Attach subscription info to request
     req.subscription = activeSubscription;
     next();

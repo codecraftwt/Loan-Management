@@ -1,6 +1,5 @@
 const Subscription = require("../../models/Subscription");
 const User = require("../../models/User");
-const Loan = require("../../models/Loan");
 const razorpayInstance = require("../../config/razorpay.config");
 const crypto = require("crypto");
 
@@ -240,7 +239,8 @@ const createSubscriptionOrder = async (req, res) => {
           description: subscription.description,
           amount: subscription.amount,
           duration: subscription.duration,
-          durationInMonths: subscription.durationInMonths
+          durationInMonths: subscription.durationInMonths,
+          maxLoans: subscription.maxLoans
         },
         user: {
           id: user._id,
@@ -372,7 +372,7 @@ const getUserActiveSubscription = async (req, res) => {
 
     const user = await User.findById(userId)
       .select('-password')
-      .populate('subscriptionId', 'name description amount duration features');
+      .populate('subscriptionId', 'name description amount duration maxLoans features');
 
     if (!user) {
       return res.status(404).json({
@@ -453,7 +453,21 @@ const canUserCreateLoan = async (userId) => {
       };
     }
 
-    // User can create unlimited loans as long as subscription is active
+    // Check loan limits if subscription has limits
+    if (subscription.maxLoans > 0) {
+      const loanCount = await Loan.countDocuments({
+        lenderId: userId,
+        createdAt: { $gte: user.startDate }
+      });
+
+      if (loanCount >= subscription.maxLoans) {
+        return {
+          canCreate: false,
+          message: `You have reached the maximum loan limit (${subscription.maxLoans}) for your current plan. Please upgrade your subscription.`
+        };
+      }
+    }
+
     return {
       canCreate: true,
       subscription: subscription
@@ -618,7 +632,7 @@ const getSubscriptionStats = async (req, res) => {
 
     // Get subscription details
     const subscription = user.subscriptionId ?
-      await Subscription.findById(user.subscriptionId).select('name amount duration') :
+      await Subscription.findById(user.subscriptionId).select('name amount duration maxLoans') :
       null;
 
     // Count active users with subscriptions

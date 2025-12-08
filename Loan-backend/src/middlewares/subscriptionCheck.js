@@ -40,7 +40,38 @@ const checkSubscription = async (req, res, next) => {
       });
     }
     
-    // User can create unlimited loans as long as subscription is active
+    // Check loan limit based on plan
+    const subscription = await Subscription.findOne({
+      user: userId,
+      status: 'active'
+    });
+    
+    if (subscription) {
+      const loanCount = await req.app.locals.loanCount || 0;
+      
+      if (loanCount >= subscription.features.maxLoans) {
+        return res.status(403).json({
+          success: false,
+          message: `You have reached your loan limit. Your ${user.subscriptionPlan} plan allows maximum ${subscription.features.maxLoans} loans.`,
+          code: 'LOAN_LIMIT_EXCEEDED'
+        });
+      }
+      
+      // Check loan amount limit
+      if (req.body.amount && subscription.features.maxLoanAmount) {
+        if (req.body.amount > subscription.features.maxLoanAmount) {
+          return res.status(403).json({
+            success: false,
+            message: `Loan amount exceeds your plan limit of ₹${subscription.features.maxLoanAmount}`,
+            code: 'LOAN_AMOUNT_EXCEEDED'
+          });
+        }
+      }
+      
+      // Attach subscription info to request
+      req.subscription = subscription;
+    }
+    
     req.userSubscription = user;
     next();
   } catch (error) {
