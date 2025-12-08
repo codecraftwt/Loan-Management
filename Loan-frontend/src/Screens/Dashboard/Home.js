@@ -183,7 +183,7 @@ export default function Home() {
           </View>
           <TouchableOpacity
             style={styles.avatarContainer}
-            onPress={() => navigation.navigate('ProfileScreen')}>
+            onPress={() => navigation.navigate('ProfileDetails')}>
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>
                 {(user?.userName || 'U').charAt(0).toUpperCase()}
@@ -221,8 +221,6 @@ export default function Home() {
             // style={styles.premiumContent}
             >
               <View style={styles.premiumContent}>
-
-
                 {/* Decorative Elements */}
                 <View style={styles.premiumOrnamentTop} />
                 <View style={styles.premiumOrnamentBottom} />
@@ -645,7 +643,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: Platform.OS === 'android' ? m(28) : m(10),
-    paddingVertical: Platform.OS === 'android' ? m(0) : m(26),
+    paddingVertical: Platform.OS === 'android' ? m(26) : m(26),
     position: 'relative',
     overflow: 'hidden',
   },

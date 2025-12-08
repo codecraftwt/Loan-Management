@@ -117,16 +117,14 @@ export const getLoanByLender = createAsyncThunk(
 
 export const createLoan = createAsyncThunk(
   'loans/createLoan',
-  async (loanData, { rejectWithValue }) => {
+  async (loanData, { rejectWithValue, dispatch }) => {
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
         return rejectWithValue('User is not authenticated');
       }
 
-      // Debug: Log the exact data being sent to API
-      console.log('createLoan - Data being sent to backend:', JSON.stringify(loanData, null, 2));
-      console.log('createLoan - Aadhar Card No:', loanData.aadharCardNo);
+      console.log('Creating loan with data:', loanData);
 
       const response = await instance.post('loan/add-loan', loanData, {
         headers: {
@@ -136,14 +134,28 @@ export const createLoan = createAsyncThunk(
 
       return response.data;
     } catch (error) {
-      if (error.response) {
-        console.error('API Error Response:', error.response.data);
-        console.error('API Error Status:', error.response.status);
-        console.error('API Error Headers:', error.response.headers);
-        return rejectWithValue(error.response.data || 'Failed to create loan');
+      console.error('Create loan error:', error.response?.data || error.message);
+
+      // Handle subscription-related errors
+      if (error.response?.status === 403) {
+        return rejectWithValue({
+          type: 'SUBSCRIPTION_REQUIRED',
+          message: error.response.data.message || 'You need an active subscription to create loans.',
+          errorCode: error.response.data.errorCode,
+        });
       }
-      console.error('Error:', error.message);
-      return rejectWithValue(error.message || 'Unknown error');
+
+      if (error.response?.status === 400 && error.response.data.errorCode === 'LOAN_LIMIT_REACHED') {
+        return rejectWithValue({
+          type: 'LOAN_LIMIT_REACHED',
+          message: error.response.data.message || 'Loan limit reached for your plan.',
+          data: error.response.data.data,
+        });
+      }
+
+      return rejectWithValue(
+        error.response?.data?.message || error.message || 'Failed to create loan'
+      );
     }
   },
 );
@@ -296,11 +308,23 @@ const loanSlice = createSlice({
       })
       .addCase(createLoan.rejected, (state, action) => {
         state.loading = false;
-        state.error =
-          action.payload ||
-          action.error?.message ||
-          action.payload.message ||
-          'Error creating loan';
+        const error = action.payload;
+
+        if (error?.type === 'SUBSCRIPTION_REQUIRED') {
+          state.error = {
+            type: 'SUBSCRIPTION_REQUIRED',
+            message: error.message,
+            errorCode: error.errorCode,
+          };
+        } else if (error?.type === 'LOAN_LIMIT_REACHED') {
+          state.error = {
+            type: 'LOAN_LIMIT_REACHED',
+            message: error.message,
+            data: error.data,
+          };
+        } else {
+          state.error = error?.message || 'Error creating loan';
+        }
       })
 
       // Handling updateLoanStatus
