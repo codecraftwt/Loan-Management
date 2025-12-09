@@ -34,7 +34,7 @@ export const getSubscriptionPlans = createAsyncThunk(
   'subscription/getSubscriptionPlans',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await instance.get('subscriptions/plans');
+      const response = await instance.get('subscription/plans');
       
       return {
         plans: response.data.data || [],
@@ -58,7 +58,7 @@ export const createSubscriptionOrder = createAsyncThunk(
       }
 
       const response = await instance.post(
-        'subscriptions/create-order',
+        'subscription/create-order',
         { subscriptionId },
         {
           headers: {
@@ -87,7 +87,7 @@ export const verifyPayment = createAsyncThunk(
       }
 
       const response = await instance.post(
-        'subscriptions/verify-payment',
+        'subscription/verify-payment',
         paymentData,
         {
           headers: {
@@ -115,7 +115,7 @@ export const getActiveSubscription = createAsyncThunk(
         return rejectWithValue('User is not authenticated');
       }
 
-      const response = await instance.get('subscriptions/my-subscription', {
+      const response = await instance.get('subscription/my-subscription', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -140,7 +140,7 @@ export const checkSubscriptionStatus = createAsyncThunk(
         return rejectWithValue('User is not authenticated');
       }
 
-      const response = await instance.get('subscriptions/my-subscription', {
+      const response = await instance.get('subscription/my-subscription', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -165,7 +165,7 @@ export const getSubscriptionStats = createAsyncThunk(
         return rejectWithValue('User is not authenticated');
       }
 
-      const response = await instance.get('subscriptions/stats', {
+      const response = await instance.get('subscription/stats', {
         headers: {
           Authorization: `Bearer ${token}`,
         },

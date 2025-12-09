@@ -18,6 +18,7 @@ export const initializeRazorpay = () => {
 export const openRazorpayCheckout = (order, user) => {
   return new Promise((resolve, reject) => {
     if (!order || !order.orderId) {
+      console.error('Invalid order data:', order);
       reject(new Error('Invalid order data'));
       return;
     }
@@ -41,15 +42,30 @@ export const openRazorpayCheckout = (order, user) => {
       },
     };
 
-    console.log('Opening Razorpay with options:', {
+    console.log('Razorpay Options:', {
       amount: options.amount,
       orderId: options.order_id,
+      currency: options.currency,
+      description: options.description,
       key: options.key ? 'Key present' : 'Key missing',
     });
 
     RazorpayCheckout.open(options)
       .then((data) => {
-        console.log('Payment success:', data);
+        console.log('Payment success - Data:', data);
+        console.log('Payment ID:', data.razorpay_payment_id);
+        console.log('Order ID:', data.razorpay_order_id);
+        console.log('Signature:', data.razorpay_signature);
+        
+        if (!data.razorpay_payment_id || !data.razorpay_order_id) {
+          console.error('Missing payment or order ID');
+          reject({
+            type: 'PAYMENT_FAILED',
+            message: 'Payment response incomplete',
+          });
+          return;
+        }
+        
         resolve({
           success: true,
           data: {
@@ -61,26 +77,33 @@ export const openRazorpayCheckout = (order, user) => {
         });
       })
       .catch((error) => {
-        console.error('Razorpay error:', error);
+        console.error('Razorpay error - Full error:', error);
+        console.error('Razorpay error code:', error.code);
+        console.error('Razorpay error description:', error.description);
+        console.error('Razorpay error message:', error.message);
         
         if (error.code === 2) {
           // User cancelled
+          console.log('User cancelled payment');
           reject({
             type: 'USER_CANCELLED',
             message: 'Payment cancelled by user',
+            code: error.code,
           });
-        } else if (error.code === 0) {
-          // Network error
+        } else if (error.code === 0 || error.code === 3) {
+          // Network error or payment failed
           reject({
-            type: 'NETWORK_ERROR',
-            message: 'Network error. Please check your connection.',
+            type: 'PAYMENT_FAILED',
+            message: error.description || error.message || 'Payment failed. Please try again.',
+            code: error.code,
           });
         } else {
           // Other errors
           reject({
             type: 'PAYMENT_FAILED',
-            message: error.description || error.message || 'Payment failed',
+            message: error.description || error.message || 'Payment failed. Please try again.',
             error: error,
+            code: error.code,
           });
         }
       });
